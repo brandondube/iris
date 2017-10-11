@@ -39,6 +39,7 @@ class ConvergencePanel(object):
         self.param_ax.set(xlabel='Generation',
                           ylabel='Parameter Value')
         self.param_vector_observables.append(self.update_param_plot)
+        self.param_vector_observables.append(self.redraw)
 
     @property
     def current_data(self):
@@ -56,7 +57,7 @@ class ConvergencePanel(object):
         plt.close(self.fig)
         self.fig = plt.figure(figsize=(10,6))
         self.param_ax = self.fig.add_subplot(121)
-        self.cost_ax = self.fig.add_subplot(122)
+        self.cost_ax = self.fig.add_subplot(122, shareax=self.param_ax)
         self.param_ax.set(xlabel='Generation',ylabel='Parameter Value')
         self.cost_ax.set(xlabel='Generation', ylabel='Cost Function Value')
         
@@ -67,7 +68,7 @@ class ConvergencePanel(object):
 
         line, = self.cost_ax.plot([],[], lw=3)
         self.cost_line = line
-        self.param_vector_observables.append(self.update_cost_plot)
+        self.param_vector_observables.insert(-1, self.update_cost_plot)
 
     def add_labels(self, labels):
         self.plt_labels = labels
@@ -133,7 +134,6 @@ class ConvergencePanel(object):
         if len(str(ymax)) > len(str(self.ymax_last)):
             self.fig.tight_layout()
         self.ymax_last = ymax
-        plt.pause(0.0001)
 
     def update_cost_plot(self, new_data):
         # increment the iterations
@@ -147,4 +147,6 @@ class ConvergencePanel(object):
         self.cost_line.set_ydata(self.cost_data)
         self.cost_ax.relim()
         self.cost_ax.autoscale_view()
+    
+    def redraw(self, new_data):
         plt.pause(0.0001)
