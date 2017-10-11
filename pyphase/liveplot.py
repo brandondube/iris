@@ -1,10 +1,14 @@
 from multiprocessing.connection import Listener
 
+import numpy as np
 from matplotlib import pyplot as plt
 plt.style.use('ggplot')
 
+import dill as pickle
+
 from pyphase.plotpanels import ConvergencePanel
 
+cost_function = None
 address = ('localhost', 12345)     # family is deduced to be 'AF_INET'
 with Listener(address, authkey=b'pyphase_live') as listener:
     print('pyphase plotting server started')
@@ -31,14 +35,14 @@ with Listener(address, authkey=b'pyphase_live') as listener:
                 #    'final_result': None,
                 #    'add_cost_function': None,
                 # }
-                # this block will switch based on the value associated with id.
                 mid = msg['id'].lower()
                 if mid == 'name_values':
                     panel.add_labels(msg['data'])
                     continue
 
                 if mid == 'add_cost_function':
-                    cost_function = msg['data']
+                    panel.add_cost_function(pickle.loads(msg['data']))
+                    continue
 
                 if mid == 'final_result':
                     # TODO: implement
