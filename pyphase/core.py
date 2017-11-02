@@ -27,27 +27,6 @@ def seidel_coefs_to_dict(wavefrontcoefs):
 def seidel_dict_to_coefs(dictionary):
     return list(dictionary.values())
 
-def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
-    ''' A cost function that compares a measured or simulated T/S MTF to a
-        simulated one.
-    '''
-    t = ((true_tan-sim_tan)**2).sum()
-    s = ((true_sag-sim_sag)**2).sum()
-    return t+s
-
-def mtf_ts_extractor(psf, freqs):
-    ''' Extracts the T and S MTF from a PSF object.
-    '''
-    mtf = MTF.from_psf(psf)
-    tan = mtf.exact_polar(freqs=freqs, azimuths=0)
-    sag = mtf.exact_polar(freqs=freqs, azimuths=90)
-    return tan, sag
-
-def axis_sph_constraint(wavefrontcoefs):
-    ''' Constrains wavefront coefficients with field dependence to be zero.
-    '''
-    pass
-
 def seidel_solve_fcn(truth_tan, truth_sag, freqs, efl, fno, wavelength, field, wavefrontcoefs):
     abers = seidel_coefs_to_dict(wavefrontcoefs)
     pupil = Seidel(**abers, epd=efl/fno, wavelength=wavelength, samples=256, field=field)

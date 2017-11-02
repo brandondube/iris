@@ -8,10 +8,14 @@ from pyphase.core import (
     seidel_solve_fcn_focusdiv,
     seidel_solve_fcn_fldconstant_only,
     seidel_solve_fcn_fldconstant_only_focusdiv,
-    mtf_cost_fcn,
     makesolver,
 )
 
+from pyphase.util import (
+    mtf_cost_fcn,
+    mtf_ts_extractor,
+    mtf_ts_to_dataframe,
+)
 __all__ = [
     'phase_from_mtf',
     'generic_solve_fcn',
@@ -22,6 +26,8 @@ __all__ = [
     'seidel_solve_fcn_focusdiv',
     'seidel_solve_fcn_fldconstant_only',
     'seidel_solve_fcn_fldconstant_only_focusdiv',
-    'mtf_cost_fcn',
     'makesolver',
+    'mtf_cost_fcn',
+    'mtf_ts_extractor',
+    'mtf_ts_to_dataframe',
 ]
