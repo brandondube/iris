@@ -57,7 +57,7 @@ class ConvergencePanel(object):
         plt.close(self.fig)
         self.fig = plt.figure(figsize=(10,6))
         self.param_ax = self.fig.add_subplot(121)
-        self.cost_ax = self.fig.add_subplot(122, shareax=self.param_ax)
+        self.cost_ax = self.fig.add_subplot(122, sharex=self.param_ax)
         self.param_ax.set(xlabel='Generation',ylabel='Parameter Value')
         self.cost_ax.set(xlabel='Generation', ylabel='Cost Function Value')
         
@@ -66,6 +66,10 @@ class ConvergencePanel(object):
         self.cost_iters_current = self.iters_current
         self.cost_data = []
 
+
+        # reset the lines for the parameter plot and create the line for the
+        # cost plot
+        self.plt_lines = None
         line, = self.cost_ax.plot([],[], lw=3)
         self.cost_line = line
         self.param_vector_observables.insert(-1, self.update_cost_plot)
@@ -74,29 +78,30 @@ class ConvergencePanel(object):
         self.plt_labels = labels
         self.plt_add_legend = True
     
-    def initiate_lines(self, data):
-        if self.plt_data is None:
-            # make arrays for the parameter values over generations
-            self.plt_data = [list() for x in range(len(data))]
-            self.plt_lines = []
-
-            # adapt line width to density of plot
-            length = len(data)
-            line_width = 3
-            if len(data) > 5:
-                line_width = 2
-            if len(data) > 10:
-                line_width = 10
-            
-            # create line objects
-            for _ in range(len(data)):
-                line, = self.param_ax.plot([], [], lw=line_width)
-                self.plt_lines.append(line)
+    def initiate_data(self, data):
+        self.plt_data = [list() for x in range(len(data))]
+    
+    def initiate_lines(self):
+        self.plt_lines = []
+        
+        # adapt line width to density of plot
+        length = len(self.plt_data)
+        line_width = 3
+        if len(self.plt_data) > 5:
+            line_width = 2
+        if len(self.plt_data) > 10:
+            line_width = 10
+        
+        for _ in range(len(self.plt_data)):
+            line, = self.param_ax.plot([], [], lw=line_width)
+            self.plt_lines.append(line)
 
     def update_param_plot(self, new_data):
         # initiate the lines if they do not exist
         if self.plt_data is None:
-            self.initiate_lines(new_data)
+            self.initiate_data(new_data)
+        if self.plt_lines is None:
+            self.initiate_lines()
         
         # increment the iterations
         self.iters.append(self.iters_current)
@@ -116,9 +121,9 @@ class ConvergencePanel(object):
             ncols = 1
             if len(self.plt_labels) > 6:
                 ncols = 2
-            elif len(self.plt_labels > 9):
+            elif len(self.plt_labels) > 9:
                 ncols = 3
-            elif len(self.plt_labels > 12):
+            elif len(self.plt_labels) > 12:
                 ncols = 4
             self.param_ax.legend(self.plt_labels, ncol=ncols)
             self.plt_add_legend = False

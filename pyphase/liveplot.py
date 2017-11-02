@@ -8,6 +8,15 @@ import dill as pickle
 
 from pyphase.plotpanels import ConvergencePanel
 
+
+# import stuff to allow a cost function to be executed
+from prysm import (
+    FringeZernike,
+    Seidel,
+    PSF,
+    MTF,
+    mtf_tan_sag_to_dataframe,
+)
 cost_function = None
 address = ('localhost', 12345)     # family is deduced to be 'AF_INET'
 with Listener(address, authkey=b'pyphase_live') as listener:
