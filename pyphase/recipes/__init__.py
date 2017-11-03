@@ -1,4 +1,4 @@
-from recipes.axis_solve import (
+from pyphase.recipes.axis_solve import (
     sph_from_focusdiverse_axial_mtf,
 )
 
