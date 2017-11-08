@@ -11,7 +11,7 @@ from prysm import FringeZernike, Seidel, PSF, MTF, config
 from prysm.thinlens import image_displacement_to_defocus
 config.set_precision(32)
 
-from pyphase.util import mtf_ts_extractor, mtf_ts_to_dataframe
+from prysm.mtf_utils import mtf_ts_extractor, mtf_ts_to_dataframe
 
 def thrufocus_mtf_from_wavefront(focused_wavefront, sim_params, focus_diversity, freqs):
     ''' Creates a thru-focus T/S MTF curve at each frequency requested from a
