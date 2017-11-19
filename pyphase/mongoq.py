@@ -1,11 +1,10 @@
 ''' A stdlib.Queue like JobQueue backed by a mongodb collection.
 '''
 from datetime import datetime
-import time
 import pymongo
 
 class JobQueue(object):
-    def __init__(self, db):
+    def __init__(self, db, name='jobqueue'):
         ''' Creates a new JobQueue instance.  Mimics the Queue object from
             stdlib using a collection in a mongo db.
 
@@ -18,30 +17,29 @@ class JobQueue(object):
 
         '''
         self.db = db
+        self.name = name
 
         if not self._exists():
             print('Creating jobqueue collection.')
             self._create()
-        self.q = self.db['jobqueue']
+        self.q = self.db[name]
 
-    def _create(self, capped=True):
-        ''' Creates a Capped Collection.
-        '''
-        # TODO - does the size parameter mean number of docs or bytesize?
+    def _create(self):
         try:
-            self.db.create_collection('jobqueue', autoIndexId=True)
-        except:
-            raise Exception('Collection "jobqueue" already created')
+            self.db.create_collection(self.name, autoIndexId=True)
+        except Exception as e:
+            print(e) # TODO: make this a typed error.
+            raise Exception(f'Collection {self.name} already created')
 
     def _exists(self):
         ''' Ensures that the jobqueue collection exists in the DB.
         '''
-        return 'jobqueue' in self.db.collection_names()
+        return self.name in self.db.collection_names()
 
     def valid(self):
         ''' Checks to see if the jobqueue is a capped collection.
         '''
-        opts = self.db['jobqueue'].options()
+        opts = self.db[self.name].options()
         if opts.get('capped', False):
             return True
         else:
@@ -61,7 +59,8 @@ class JobQueue(object):
         self.q.save(row)
         try:
             return row
-        except:
+        except Exception as e:
+            print(e) # TODO: make this a typed error
             raise Exception('There are no jobs in the queue')
 
     def put(self, data):
@@ -75,14 +74,28 @@ class JobQueue(object):
             data=data)
         try:
             self.q.insert(doc, manipulate=False)
-        except:
+        except Exception as e:
+            print(e) #TODO: make this a typed error.
             raise Exception('could not add to queue')
         return True
 
-    def get(self):
+    def get(self, n=1):
         ''' Gets the top doc from the q.  Mimics the stdlib.Queue api.
+            Extended by allowing multiple items to be taken at once
         '''
-        return self.next()
+        if n is 1:
+            return self.next()
+        else:
+            items = []
+            for i in range(n):
+                try:
+                    items.append(self.next())
+                except Exception as e:
+                    # not sure what type of exception, print and handle
+                    # will cleanup later.  TODO.
+                    print(e)
+                    pass
+            return items
 
     def __iter__(self):
         ''' Iterates through all docs in the queue
@@ -113,6 +126,15 @@ class JobQueue(object):
         cursor = self.q.find({'status': 'waiting'})
         if cursor:
             return cursor.count()
+        else:
+            return 0
+
+    @property
+    def is_empty(self):
+        if self.queue_count is 0:
+            return True
+        else:
+            return False
 
     def clear_queue(self):
         ''' Drops the queue collection.
