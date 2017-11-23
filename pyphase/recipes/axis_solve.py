@@ -2,7 +2,7 @@
     and lens parameters.
 '''
 from functools import partial
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 
 import numpy as np
 
@@ -10,9 +10,9 @@ from scipy.optimize import minimize
 
 from prysm import FringeZernike, Seidel, MTF, PSF
 from prysm.thinlens import image_displacement_to_defocus
+from prysm.mtf_utils import mtf_ts_extractor
 
-from pyphase import mtf_ts_extractor, mtf_cost_fcn
-from pyphase.util import MTFDataCube
+from pyphase.util import mtf_cost_fcn
 
 def grab_axial_data(setup_parameters, truth_dataframe):
     # extract the axial T,S MTF data
@@ -34,24 +34,6 @@ def grab_axial_data(setup_parameters, truth_dataframe):
     ax_s = np.asarray(ax_s)
     return freqs, wvfront_defocus, ax_t, ax_s
 
-def grab_mtf_cubes(truth_dataframe):
-    # copy the datafarme for manipulation
-    df = truth_dataframe.copy()
-    df.Fields = df.Field.round(4)
-    df.Focus = df.Focus.round(6)
-    sorted_df = df.sort_values(by=['Focus', 'Field', 'Freq'])
-    T = sorted_df[sorted_df.Azimuth == 'Tan']
-    S = sorted_df[sorted_df.Azimuth == 'Sag']
-    focus = np.unique(df.Focus.as_matrix())
-    fields = np.unique(df.Fields.as_matrix())
-    freqs = np.unique(df.Freq.as_matrix())
-    d1, d2, d3 = len(focus), len(fields), len(freqs)
-    t_mat = T.as_matrix.reshape((d1, d2, d3))
-    s_mat = S.as_matrix.reshape((d1, d2, d3))
-    t_cube = MTFDataCube(data=t_max, focus=focus, field=fields, freq=freqs, azimuth='Tan')
-    s_cube = MTFDataCube(data=s_max, focus=focus, field=fields, freq=freqs, azimuth='Sag')
-    return t_cube, s_cube
-
 def realize_focus_plane(setup_parameters, base_wavefront, freqs, t_true, s_true, wvs_defocus):
     # pull metadata out of the lens
     s = setup_parameters
@@ -72,7 +54,7 @@ def optfcn(setup_parameters, freqs, wvfront_defocus, ax_t, ax_s, pool, wavefront
     s = setup_parameters
     zsph3, zsph5, zsph7 = wavefrontcoefs
     efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
-    pupil = FringeZernike(Z8=zsph3, Z15=zsph5, Z24=zsph7,
+    pupil = FringeZernike(Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
                           epd=efl/fno, wavelength=wavelength, samples=samples)
     # for each focus plane, compute the cost function
     rfp_mp = partial(realize_focus_plane,
@@ -84,27 +66,13 @@ def optfcn(setup_parameters, freqs, wvfront_defocus, ax_t, ax_s, pool, wavefront
     costfcn = pool.map(rfp_mp, wvfront_defocus)
     return np.asarray(costfcn).sum()
 
-def thrufocus_spherical_cost_gradient(true_t, true_s, compute_t, compute_s):
-    # forward model:
-    #   build pupil
-    #   fft
-    #   ||^2
-    #   fft
-    #   magnitude
-
-    # reverse model
-    #   
-    Mbar = 2 * (compute_t - true_s) + (compute_s - true_s)
-    pass
-
-
 def sph_from_focusdiverse_axial_mtf(setup_parameters, truth_dataframe):
     # extract the data
     (freqs,
      focus_diversity,
      ax_t, ax_s) = grab_axial_data(setup_parameters, truth_dataframe)
 
-    pool = Pool(cpu_count()+1)
+    pool = Pool()
     optimizer_function = partial(optfcn,
                                  setup_parameters,
                                  freqs,
