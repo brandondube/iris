@@ -1,5 +1,4 @@
-''' Wraps prysm classes to introduce gradient operations for mathematical
-    operations.
+''' Wraps prysm classes to introduce gradients for mathematical operations.
 '''
 
 from pyrsm import FringeZernike, PSF, MTF
