@@ -1,10 +1,13 @@
 from functools import partial
 
+from multiprocessing.connection import Client
 import numpy as np
 import pandas as pd
 
 from mystic.solvers import PowellDirectionalSolver
 from mystic.termination import VTR
+
+from scipy.optimize import minimize
 
 from prysm import FringeZernike, PSF, MTF, Lens
 
@@ -44,6 +47,10 @@ def lens_based_phase_retrieval(lens, mtfdata):
         ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].as_matrix())
         ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].as_matrix())
 
+    def send_current_state_to_plot(client, xk):
+        client.send(xk)
+        return
+
     # optimize for W020, W040, W060, W080 based on axial MTF data
     try:
         # if len errors, we only have one focus position.  Otherwise use focus
@@ -51,19 +58,25 @@ def lens_based_phase_retrieval(lens, mtfdata):
         len(focuspos)
         #optfcn = partial(seidel_solve_fcn_focusdiv, ax_t, ax_s, freqs, focuspos,
         #                 lens.efl, lens.fno, lens.wavelength, 1)
+
+        # set up a connection to the plotter
+        address = ('localhost', 12345)
+        conn = Client(address, authkey=b'pyphase_live')
+        print('client connected')
+        # make the callback and cost functions
+        callback_fcn = partial(send_current_state_to_plot, conn)
         optfcn = partial(seidel_solve_fcn_fldconstant_only_focusdiv, ax_t, ax_s, freqs, focuspos, lens.efl, lens.fno, lens.wavelength)
-        solver = makesolver(numdims=4) # 10
-        solver.Solve(optfcn)
-        solver.Finalize()
-        return solver
+
+        # kick off an optimizer
+        start = [0,0,0,0]
+        result = minimize(optfcn, start, method='Nelder-Mead', callback=callback_fcn)
+        conn.send('quit')
+        conn.close()
+        return result
         
     except TypeError:
         #optfcn = partial(seidel_solve_fcn, ax_t[0], ax_s[0], freqs,
         #                 lens.efl, lens.fno, lens.wavelegth, 1)
-        solver = makesolver(numdims=4)
-        solver.Solve(optfcn)
-        solver.Finalize()
         return solver
 
     # todo: solve for other coefs
-
