@@ -4,7 +4,7 @@ from itertools import product
 import numpy as np
 import pandas as pd
 
-from prysm import FringeZernike, Seidel, PSF, MTF, config
+from prysm import FringeZernike, Seidel, MTF
 from prysm.thinlens import image_displacement_to_defocus, defocus_to_image_displacement
 
 from prysm.mtf_utils import mtf_ts_extractor, mtf_ts_to_dataframe
@@ -13,25 +13,23 @@ from pyphase.mongoq import JobQueue
 from pyphase.util import round_to_int
 from pyphase.recipes import sph_from_focusdiverse_axial_mtf
 
-#config.set_precision(32)
-config.set_zernike_base(1)
 
-def thrufocus_mtf_from_wavefront(focused_wavefront, sim_params, focus_diversity):
+def thrufocus_mtf_from_wavefront(focused_wavefront, sim_params):
     ''' Creates a thru-focus T/S MTF curve at each frequency requested from a
         focused wavefront.
     '''
     s = sim_params
-    focusdiv_wvs = image_displacement_to_defocus(focus_diversity, s['fno'], s['wavelength'])
+    focusdiv_wvs = np.linspace(-s['focus_range_waves'], s['focus_range_waves'], s['focus_planes'])
+    focusdiv_um = defocus_to_image_displacement(focusdiv_wvs, s['fno'], s['wavelength'])
     dfs = []
-    for focus, displacement in zip(focusdiv_wvs, focus_diversity):
+    for focus, displacement in zip(focusdiv_wvs, focusdiv_um):
         wvfront_defocus = Seidel(W020=focus,
                                  samples=s['samples'],
                                  epd=s['efl']/s['fno'],
                                  wavelength=s['wavelength'])
-        psf = PSF.from_pupil(focused_wavefront.merge(wvfront_defocus), efl=s['efl'])
-        mtf = MTF.from_psf(psf)
+        mtf = MTF.from_pupil(focused_wavefront.merge(wvfront_defocus), efl=s['efl'])
         tan, sag = mtf_ts_extractor(mtf, s['freqs'])
-        dfs.append(mtf_ts_to_dataframe(tan, sag, freqs, focus=displacement))
+        dfs.append(mtf_ts_to_dataframe(tan, sag, s['freqs'], focus=displacement))
 
     return pd.concat(dfs)
 
@@ -61,11 +59,11 @@ def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
 class AxialWorker(object):
     ''' Works through the spherical aberration related axial work queue.
     '''
-    def __init__(self, database):
+    def __init__(self, mongoclient, database):
         ''' Creates a new worker.
         '''
-        self.db = database
-        self.q = JobQueue(database, name='axial_queue')
+        self.db = mongoclient[database]
+        self.q = JobQueue(self.db, name='axial_queue')
         self.hopkins = [None, None, None, None]
         self.zernike = [None, None, None, None]
 
@@ -102,7 +100,7 @@ class AxialWorker(object):
         #next_job = q.get()
         pass
 
-    def prepare_document(self, result_parameters, coefs_by_iter, erf_by_iter):
+    def prepare_document(self, result_parameters, coefs_by_iter, erf_by_iter, rmswfe_by_iter):
         ''' prepares a document (dict) for insertion into the results database
         '''
         doc = {
@@ -122,12 +120,13 @@ class AxialWorker(object):
             'retrieved_zernike': result_parameters,
             'coefs_by_iter': coefs_by_iter,
             'erf_by_iter': erf_by_iter,
+            'rmswfe_by_iter': rmswfe_by_iter,
         }
 
         return doc
 
     def publish_document(self, doc):
-        self.db.axial_results.insert_one(doc)
+        self.db.axial_montecarlo_results.insert_one(doc)
 
     def execute_queue_item(self, hopkins_coefs):
         sp = self.sim_params
@@ -135,8 +134,15 @@ class AxialWorker(object):
         focusdiv_wvs = sp['focus_range_waves']
         focusdiv_um = round_to_int(defocus_to_image_displacement(
             focusdiv_wvs,
-            self.sim_params['fno'],
-            self.sim_params['wavelength']))
+            sp['fno'],
+            sp['wavelength']), 5) # round to nearest 5 um
+
+        # copy and update the focus diversity in the config dict
+        cfg = self.sim_params.copy()
+        cfg['focus_range_waves'] = image_displacement_to_defocus(
+            focusdiv_um,
+            sp['fno'],
+            sp['wavelength'])
 
         # convert hopkins coefs to zernikes
         zerns = [1, 2, 3, 4]
@@ -148,5 +154,6 @@ class AxialWorker(object):
         pupil = FringeZernike(Z4=z4, Z9=z9, Z16=z16, Z24=z24, epd=efl/fno,
                               wavelength=wavelength, samples=samples)
 
-        truth_df = thrufocus_mtf_from_wavefront(pupil, self.sim_params, focusdiv_um)
+        truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
         values = sph_from_focusdiverse_axial_mtf(self.sim_params, truth_df)
+        return values # TODO: this isn't what's done
