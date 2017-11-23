@@ -87,9 +87,7 @@ def sph_from_focusdiverse_axial_mtf(setup_parameters, truth_dataframe):
                 optimizer_function,
                 [0, 0, 0],
                 method='L-BFGS-B',
-                options={
-                    'disp': True
-                },
+                options={'disp': True},
                 callback=callback)
 
         cost_by_iter = parse_cost_by_iter_lbfgsb(txt.captured)

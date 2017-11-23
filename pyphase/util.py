@@ -16,7 +16,7 @@ def round_to_int(value, integer):
 def parse_cost_by_iter_lbfgsb(string):
     # use regex to find lines that include "at iteration" information.
     lines_with_cost_function_values = \
-        re.findall(r'At iterate\s*\d\s*f=\s*-*?\d*.\d*D[+-]\d*', string)
+        re.findall(r'At iterate\s*\d*?\s*f=\s*-*?\d*.\d*D[+-]\d*', string)
 
     # grab the value from each line and convert to python floats
     fortran_values = [s.split()[-1] for s in lines_with_cost_function_values]
