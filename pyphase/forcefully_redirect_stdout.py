@@ -23,7 +23,7 @@ class forcefully_redirect_stdout(object):
         '''
         # typecheck sys.stdout -- if it's a textwrapper, we're in a shell
         # if it's not, we're likely in an IPython terminal or jupyter kernel
-        # and need to target self.target__stdout__ instead of sys[self.target]
+        # and need to target sys.__stdout__ instead of sys.stdout
         if type(sys.stdout) is io.TextIOWrapper:
             self.target = sys.stdout
         else:
