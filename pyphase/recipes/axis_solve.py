@@ -49,9 +49,9 @@ def realize_focus_plane(setup_parameters, base_wavefront, t_true, s_true, wvs_de
 def optfcn(setup_parameters, wvfront_defocus, tan, sag, pool, wavefrontcoefs):
     # generate a "base pupil" with some aberration content
     s = setup_parameters
-    zsph3, zsph5, zsph7 = wavefrontcoefs
+    zdefocus, zsph3, zsph5, zsph7 = wavefrontcoefs
     efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
-    pupil = FringeZernike(Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
+    pupil = FringeZernike(Z4=zdefocus, Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
                           epd=efl/fno, wavelength=wavelength, samples=samples)
     # for each focus plane, compute the cost function
     rfp_mp = partial(realize_focus_plane,
@@ -85,7 +85,7 @@ def sph_from_focusdiverse_axial_mtf(setup_parameters, truth_dataframe):
         with forcefully_redirect_stdout() as txt:
             result = minimize(
                 optimizer_function,
-                [0, 0, 0],
+                [0, 0, 0, 0],
                 method='L-BFGS-B',
                 options={'disp': True},
                 callback=callback)
