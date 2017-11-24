@@ -1,28 +1,15 @@
 from multiprocessing.connection import Listener
 
-import numpy as np
 from matplotlib import pyplot as plt
-plt.style.use('ggplot')
 
 import dill as pickle
 
 from pyphase.plotpanels import ConvergencePanel
+plt.style.use('ggplot')
 
-
-# import stuff to allow a cost function to be executed
-from prysm import (
-    FringeZernike,
-    Seidel,
-    PSF,
-    MTF,
-    mtf_tan_sag_to_dataframe,
-)
-cost_function = None
 address = ('localhost', 12345)     # family is deduced to be 'AF_INET'
 with Listener(address, authkey=b'pyphase_live') as listener:
-    print('pyphase plotting server started')
     with listener.accept() as conn:
-        print('client connected')
         # make a new panel instance
         panel = ConvergencePanel()
         while True:
@@ -56,5 +43,5 @@ with Listener(address, authkey=b'pyphase_live') as listener:
                 if mid == 'final_result':
                     # TODO: implement
                     continue
-            
+
             panel.current_data = msg
