@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import tempfile
@@ -20,12 +21,19 @@ class forcefully_redirect_stdout(object):
             `str` if type(to) is None, else returns `None`.
 
         '''
+        # typecheck sys.stdout -- if it's a textwrapper, we're in a shell
+        # if it's not, we're likely in an IPython terminal or jupyter kernel
+        # and need to target self.target__stdout__ instead of sys[self.target]
+        if type(sys.stdout) is io.TextIOWrapper:
+            self.target = sys.stdout
+        else:
+            self.target = sys.__stdout__
 
         # initialize where we will redirect to and a file descriptor for python
-        # stdout -- sys.stdout is used by python, while os.fd(1) is used by
+        # stdout -- self.targetstdout is used by python, while os.fd(1) is used by
         # C/C++/Fortran/etc
         self.to = to
-        self.fd = sys.stdout.fileno()
+        self.fd = self.target.fileno()
         if self.to is None:
             self.to = tempfile.SpooledTemporaryFile(mode='w+b')
         else:
@@ -45,6 +53,6 @@ class forcefully_redirect_stdout(object):
         self.to.close()
 
     def _redirect_stdout(self, to):
-        sys.stdout.close() # implicit flush()
+        self.target.close() # implicit flush()
         os.dup2(to.fileno(), self.fd) # fd writes to 'to' file
-        sys.stdout = os.fdopen(self.fd, 'w') # Python writes to fd
+        self.target = os.fdopen(self.fd, 'w') # Python writes to fd
