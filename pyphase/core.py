@@ -104,6 +104,7 @@ class AxialWorker(object):
         ''' prepares a document (dict) for insertion into the results database
         '''
         doc = {
+            'sim_params': self.sim_params,
             'truth_hopkins': {
                 'W020': self.hopkins[0],
                 'W040': self.hopkins[1],
@@ -116,8 +117,12 @@ class AxialWorker(object):
                 'Z16': self.zernike[2],
                 'Z25': self.zernike[3],
             },
-            'sim_params': self.sim_params,
-            'retrieved_zernike': result_parameters,
+            'retrieved_zernike': {
+                'Z4': result_parameters.Z4,
+                'Z9': result_parameters.Z9,
+                'Z16': result_parameters.Z16,
+                'Z25': result_parameters.Z25,
+            },
             'coefs_by_iter': coefs_by_iter,
             'erf_by_iter': erf_by_iter,
             'rmswfe_by_iter': rmswfe_by_iter,
@@ -155,5 +160,16 @@ class AxialWorker(object):
                               wavelength=wavelength, samples=samples)
 
         truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
-        values = sph_from_focusdiverse_axial_mtf(self.sim_params, truth_df)
-        return values # TODO: this isn't what's done
+        result = sph_from_focusdiverse_axial_mtf(self.sim_params, truth_df)
+
+        p_by_iter, e_by_iter = result.x_iter, result.cost_by_iter
+        rmswfe_by_iter = []
+        for p in p_by_iter:
+            zdefocus, zsph3, zsph5, zsph7 = p
+            efl, fno, wavelength, samples = sp['efl'], sp['fno'], sp['wavelength'], sp['samples']
+            pup = FringeZernike(Z4=zdefocus, Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
+                                epd=efl/fno, wavelength=wavelength, samples=samples)
+
+            p_err = pupil - pup
+            rmswfe_by_iter.append(p_err.rms)
+        return # TODO: this isn't what's done
