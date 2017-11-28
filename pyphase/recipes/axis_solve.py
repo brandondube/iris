@@ -45,7 +45,6 @@ def realize_focus_plane(setup_parameters, base_wavefront, t_true, s_true, wvs_de
     t, s = mtf_ts_extractor(mtf, s['freqs'])
     return mtf_cost_fcn(t_true, s_true, t, s)
 
-
 def optfcn(setup_parameters, wvfront_defocus, tan, sag, pool, wavefrontcoefs):
     # generate a "base pupil" with some aberration content
     s = setup_parameters
@@ -53,14 +52,29 @@ def optfcn(setup_parameters, wvfront_defocus, tan, sag, pool, wavefrontcoefs):
     efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
     pupil = FringeZernike(Z4=zdefocus, Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
                           epd=efl/fno, wavelength=wavelength, samples=samples)
+
     # for each focus plane, compute the cost function
     rfp_mp = partial(realize_focus_plane,
                      setup_parameters,
                      pupil)
     costfcn = pool.starmap(rfp_mp, zip(tan, sag, wvfront_defocus))
-    return np.asarray(costfcn).sum()
+    return sum(costfcn)
 
-def sph_from_focusdiverse_axial_mtf(setup_parameters, truth_dataframe):
+def optfcn_seq(setup_parameters, wvfront_defocus, tan, sag, wavefrontcoefs):
+    # generate a "base pupil" with some aberration content
+    s = setup_parameters
+    zdefocus, zsph3, zsph5, zsph7 = wavefrontcoefs
+    efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
+    pupil = FringeZernike(Z4=zdefocus, Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
+                          epd=efl/fno, wavelength=wavelength, samples=samples)
+
+    # for each focus plane, compute the cost function
+    costfcn = []
+    for tan, sag, defocus in zip(tan, sag, wvfront_defocus):
+        costfcn.append(realize_focus_plane(s, pupil, tan, sag, defocus))
+    return sum(costfcn)
+
+def sph_from_focusdiverse_axial_mtf(setup_parameters, truth_dataframe, guess=[0, 0, 0, 0]):
     # extract the data
     (focus_diversity,
      ax_t, ax_s) = grab_axial_data(setup_parameters, truth_dataframe)
@@ -82,15 +96,22 @@ def sph_from_focusdiverse_axial_mtf(setup_parameters, truth_dataframe):
         parameter_vectors.append(x)
 
     try:
+        # do the optimization and capture the per-iteration information from stdout
         with forcefully_redirect_stdout() as txt:
             result = minimize(
-                optimizer_function,
-                [0, 0, 0, 0],
+                fun=optimizer_function,
+                x0=guess,
                 method='L-BFGS-B',
                 options={'disp': True},
                 callback=callback)
 
+        # grab the extra data
         cost_by_iter = parse_cost_by_iter_lbfgsb(txt.captured)
+
+        # add the guess to the front of the parameter vectors
+        #cost_init = optfcn_seq(setup_parameters, focus_diversity, ax_t, ax_s, guess)
+        parameter_vectors.insert(0, np.asarray(guess))
+        #cost_by_iter.insert(0, cost_init)
         result.x_iter = parameter_vectors
         result.fun_iter = cost_by_iter
         pool.close()
