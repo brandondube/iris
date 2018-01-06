@@ -3,6 +3,7 @@ import os
 import sys
 import tempfile
 
+
 class forcefully_redirect_stdout(object):
     ''' Forces stdout to be redirected, for both python code and C/C++/Fortran
         or other linked libraries.  Useful for scraping values from e.g. the
@@ -53,6 +54,6 @@ class forcefully_redirect_stdout(object):
         self.to.close()
 
     def _redirect_stdout(self, to):
-        self.target.close() # implicit flush()
-        os.dup2(to.fileno(), self.fd) # fd writes to 'to' file
-        self.target = os.fdopen(self.fd, 'w') # Python writes to fd
+        self.target.close()  # implicit flush()
+        os.dup2(to.fileno(), self.fd)  # fd writes to 'to' file
+        self.target = os.fdopen(self.fd, 'w')  # Python writes to fd
