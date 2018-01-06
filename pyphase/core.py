@@ -102,39 +102,6 @@ class AxialWorker(object):
         #next_job = q.get()
         pass
 
-    def prepare_document(self, result_parameters, coefs_by_iter, erf_by_iter, rmswfe_by_iter, solve_time, true_rms):
-        ''' prepares a document (dict) for insertion into the results database
-        '''
-        doc = {
-            'sim_params': self.sim_params,
-            'truth_hopkins': {
-                'W020': self.hopkins[0],
-                'W040': self.hopkins[1],
-                'W060': self.hopkins[2],
-                'W080': self.hopkins[3],
-            },
-            'truth_zernike': {
-                'Z4': self.zernike[0],
-                'Z9': self.zernike[1],
-                'Z16': self.zernike[2],
-                'Z25': self.zernike[3],
-            },
-            'truth_rmswfe': 0,
-            'zernike_normed': False,
-            'retrieved_zernike': {
-                'Z4': result_parameters.Z4,
-                'Z9': result_parameters.Z9,
-                'Z16': result_parameters.Z16,
-                'Z25': result_parameters.Z25,
-            },
-            'coefs_by_iter': coefs_by_iter,
-            'erf_by_iter': erf_by_iter,
-            'rmswfe_by_iter': rmswfe_by_iter,
-            'solve_time': solve_time,
-        }
-
-        return doc
-
     def publish_document(self, doc):
         self.db.axial_montecarlo_results.insert_one(doc)
 
@@ -167,7 +134,7 @@ class AxialWorker(object):
         truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
         result = sph_from_focusdiverse_axial_mtf(self.sim_params, truth_df)
 
-        p_by_iter, e_by_iter = result.x_iter, result.cost_by_iter
+        p_by_iter, e_by_iter = result.x_iter, result.fun_iter
         rmswfe_by_iter = []
         for p in p_by_iter:
             zdefocus, zsph3, zsph5, zsph7 = p
@@ -177,4 +144,38 @@ class AxialWorker(object):
 
             p_err = pupil - pup
             rmswfe_by_iter.append(p_err.rms)
-        return self.prepare_document(result.x, p_by_iter, e_by_iter, rmswfe_by_iter, result.time, pupil.rms)
+        return prepare_document(self.sim_params, self.hopkins, self.zernike, result.x, p_by_iter, e_by_iter, rmswfe_by_iter, result.time, pupil.rms)
+
+
+def prepare_document(sim_params, hopkins, zernike, result_parameters, coefs_by_iter, erf_by_iter, rmswfe_by_iter, solve_time, true_rms):
+        ''' prepares a document (dict) for insertion into the results database
+        '''
+        doc = {
+            'sim_params': sim_params,
+            'truth_hopkins': {
+                'W020': hopkins[0],
+                'W040': hopkins[1],
+                'W060': hopkins[2],
+                'W080': hopkins[3],
+            },
+            'truth_zernike': {
+                'Z4': zernike[0],
+                'Z9': zernike[1],
+                'Z16': zernike[2],
+                'Z25': zernike[3],
+            },
+            'truth_rmswfe': 0,
+            'zernike_normed': False,
+            'retrieved_zernike': {
+                'Z4': result_parameters.Z4,
+                'Z9': result_parameters.Z9,
+                'Z16': result_parameters.Z16,
+                'Z25': result_parameters.Z25,
+            },
+            'coefs_by_iter': coefs_by_iter,
+            'erf_by_iter': erf_by_iter,
+            'rmswfe_by_iter': rmswfe_by_iter,
+            'solve_time': solve_time,
+        }
+
+        return doc
