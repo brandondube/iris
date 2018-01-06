@@ -12,6 +12,12 @@ def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
     return t + s
 
 
+def net_costfcn_reducer(costfcn):
+    ''' Reduces a vector cost function to a single scalar value.
+    '''
+    return sum(costfcn) / len(costfcn) * 100
+
+
 def round_to_int(value, integer):
     return integer * round(float(value) / integer)
 
