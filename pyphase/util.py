@@ -7,8 +7,8 @@ def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
     ''' A cost function that compares a measured or simulated T/S MTF to a
         simulated one.
     '''
-    t = ((true_tan - sim_tan) ** 2).sum()
-    s = ((true_sag - sim_sag) ** 2).sum()
+    t = ((true_tan - sim_tan) ** 2).sum() / true_tan.size
+    s = ((true_sag - sim_sag) ** 2).sum() / true_sag.size
     return t + s
 
 
