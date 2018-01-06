@@ -161,7 +161,7 @@ class AxialWorker(object):
         self.zernike = [zerns[3], zerns[8], zerns[15], zerns[24]]
         z4, z9, z16, z25 = self.zernike
         efl, fno, wavelength, samples = sp['efl'], sp['fno'], sp['wavelength'], sp['samples']
-        pupil = FringeZernike(Z4=z4, Z9=z9, Z16=z16, Z25=z25, epd=efl/fno,
+        pupil = FringeZernike(Z4=z4, Z9=z9, Z16=z16, Z25=z25, epd=efl / fno,
                               wavelength=wavelength, samples=samples)
 
         truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
