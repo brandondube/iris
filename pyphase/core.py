@@ -25,13 +25,14 @@ def thrufocus_mtf_from_wavefront(focused_wavefront, sim_params):
     for focus, displacement in zip(focusdiv_wvs, focusdiv_um):
         wvfront_defocus = Seidel(W020=focus,
                                  samples=s['samples'],
-                                 epd=s['efl']/s['fno'],
+                                 epd=s['efl'] / s['fno'],
                                  wavelength=s['wavelength'])
         mtf = MTF.from_pupil(focused_wavefront.merge(wvfront_defocus), efl=s['efl'])
         tan, sag = mtf_ts_extractor(mtf, s['freqs'])
         dfs.append(mtf_ts_to_dataframe(tan, sag, s['freqs'], focus=displacement))
 
     return pd.concat(dfs)
+
 
 def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
     ''' Generates a cartesian product of W040, W060, and W080 subject to a best
@@ -56,6 +57,7 @@ def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
     # coefficients
     return coefs
 
+
 class AxialWorker(object):
     ''' Works through the spherical aberration related axial work queue.
     '''
@@ -70,14 +72,14 @@ class AxialWorker(object):
         efl = 50
         fno = 2.8
         lambda_ = 0.55
-        extinction = 1000/(fno*lambda_)
-        freqs = np.arange(0, extinction, 10)[1:] # skip 0
+        extinction = 1000 / (fno * lambda_)
+        freqs = np.arange(0, extinction, 10)[1:]  # skip 0
         self.sim_params = {
             'efl': efl,
             'fno': fno,
             'wavelength': lambda_,
             'samples': 128,
-            'focus_planes': 21, # TODO: see if this many is necessary
+            'focus_planes': 21,  # TODO: see if this many is necessary
             'focus_range_waves': 2,
             'freqs': freqs,
         }
@@ -100,7 +102,7 @@ class AxialWorker(object):
         #next_job = q.get()
         pass
 
-    def prepare_document(self, result_parameters, coefs_by_iter, erf_by_iter, rmswfe_by_iter):
+    def prepare_document(self, result_parameters, coefs_by_iter, erf_by_iter, rmswfe_by_iter, solve_time, true_rms):
         ''' prepares a document (dict) for insertion into the results database
         '''
         doc = {
@@ -117,6 +119,8 @@ class AxialWorker(object):
                 'Z16': self.zernike[2],
                 'Z25': self.zernike[3],
             },
+            'truth_rmswfe': 0,
+            'zernike_normed': False,
             'retrieved_zernike': {
                 'Z4': result_parameters.Z4,
                 'Z9': result_parameters.Z9,
@@ -126,6 +130,7 @@ class AxialWorker(object):
             'coefs_by_iter': coefs_by_iter,
             'erf_by_iter': erf_by_iter,
             'rmswfe_by_iter': rmswfe_by_iter,
+            'solve_time': solve_time,
         }
 
         return doc
@@ -133,14 +138,14 @@ class AxialWorker(object):
     def publish_document(self, doc):
         self.db.axial_montecarlo_results.insert_one(doc)
 
-    def execute_queue_item(self, hopkins_coefs):
+    def execute_queue_item(self):
         sp = self.sim_params
         # first, compute the amount of focus diversity in microns and round it
         focusdiv_wvs = sp['focus_range_waves']
         focusdiv_um = round_to_int(defocus_to_image_displacement(
             focusdiv_wvs,
             sp['fno'],
-            sp['wavelength']), 5) # round to nearest 5 um
+            sp['wavelength']), 5)  # round to nearest 5 um
 
         # copy and update the focus diversity in the config dict
         cfg = self.sim_params.copy()
@@ -154,9 +159,9 @@ class AxialWorker(object):
 
         # get the zernikes we want from the fit
         self.zernike = [zerns[3], zerns[8], zerns[15], zerns[24]]
-        z4, z9, z16, z24 = self.zernike
+        z4, z9, z16, z25 = self.zernike
         efl, fno, wavelength, samples = sp['efl'], sp['fno'], sp['wavelength'], sp['samples']
-        pupil = FringeZernike(Z4=z4, Z9=z9, Z16=z16, Z24=z24, epd=efl/fno,
+        pupil = FringeZernike(Z4=z4, Z9=z9, Z16=z16, Z25=z25, epd=efl/fno,
                               wavelength=wavelength, samples=samples)
 
         truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
@@ -168,8 +173,8 @@ class AxialWorker(object):
             zdefocus, zsph3, zsph5, zsph7 = p
             efl, fno, wavelength, samples = sp['efl'], sp['fno'], sp['wavelength'], sp['samples']
             pup = FringeZernike(Z4=zdefocus, Z9=zsph3, Z16=zsph5, Z25=zsph7, base=1,
-                                epd=efl/fno, wavelength=wavelength, samples=samples)
+                                epd=efl / fno, wavelength=wavelength, samples=samples)
 
             p_err = pupil - pup
             rmswfe_by_iter.append(p_err.rms)
-        return # TODO: this isn't what's done
+        return self.prepare_document(result.x, p_by_iter, e_by_iter, rmswfe_by_iter, result.time, pupil.rms)
