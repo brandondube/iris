@@ -22,8 +22,8 @@ class PersistentQueue(deque):
             object will not fail.
 
     Attributes:
-        path (pathlib.Path): path on disk of the queue
-        q (collections.deque): double ended queue object
+        path (Path): path on disk of the queue
+        q (deque): double ended queue object
 
     """
 
