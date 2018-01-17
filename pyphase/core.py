@@ -2,36 +2,13 @@ import time
 from itertools import product
 
 import numpy as np
-import pandas as pd
 
 from prysm import FringeZernike, Seidel, MTF
 from prysm.thinlens import image_displacement_to_defocus, defocus_to_image_displacement
 
-from prysm.mtf_utils import mtf_ts_extractor, mtf_ts_to_dataframe
-
 from pyphase.mongoq import JobQueue
 from pyphase.util import round_to_int
 from pyphase.recipes import sph_from_focusdiverse_axial_mtf
-
-
-def thrufocus_mtf_from_wavefront(focused_wavefront, sim_params):
-    ''' Creates a thru-focus T/S MTF curve at each frequency requested from a
-        focused wavefront.
-    '''
-    s = sim_params
-    focusdiv_wvs = np.linspace(-s['focus_range_waves'], s['focus_range_waves'], s['focus_planes'])
-    focusdiv_um = defocus_to_image_displacement(focusdiv_wvs, s['fno'], s['wavelength'])
-    dfs = []
-    for focus, displacement in zip(focusdiv_wvs, focusdiv_um):
-        wvfront_defocus = Seidel(W020=focus,
-                                 samples=s['samples'],
-                                 epd=s['efl'] / s['fno'],
-                                 wavelength=s['wavelength'])
-        mtf = MTF.from_pupil(focused_wavefront.merge(wvfront_defocus), efl=s['efl'])
-        tan, sag = mtf_ts_extractor(mtf, s['freqs'])
-        dfs.append(mtf_ts_to_dataframe(tan, sag, s['freqs'], focus=displacement))
-
-    return pd.concat(dfs)
 
 
 def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
