@@ -58,7 +58,7 @@ class forcefully_redirect_stdout(object):
         else:
             self.to = open(to, 'w+b')
 
-        self.old_stdout = os.fdopen(os.dup(self.fd), 'w')
+        # self.old_stdout = os.fdopen(os.dup(self.fd), 'w')
         self.captured = ''
 
     def __enter__(self):
@@ -82,10 +82,24 @@ class forcefully_redirect_stdout(object):
             Any arguments; signature required of __exit__
 
         """
-        self._redirect_stdout(to=self.old_stdout)
-        self.to.seek(0)
+        # restore stdout to its original condition
+        self.target.flush()
+        os.dup2(self.to.fileno(), self.fd)
+
+        # close the redirection point and capture text from it
         self.captured = self.to.read().decode('utf-8')
-        self.to.close()
+        # self.to.close()
+        self.target = os.fdopen(1)
+        # self._redirect_stdout(to=self.old_stdout)
+
+        with open('whygod.txt', 'w') as fid:
+            fd = sys.stdout.fileno()
+            fid.write(str(type(sys.stdout)))
+            fid.write(str(fd))
+            fid.write('\n')
+            fid.write(str(os.dup(fd)))
+            fid.write('\n')
+            fid.write(str(self.fd))
 
     def _redirect_stdout(self, to):
         """Redirect stdout to the new location.
@@ -96,6 +110,6 @@ class forcefully_redirect_stdout(object):
             where to send stdout to
 
         """
-        self.target.close()  # implicit flush()
+        self.target.flush()
         os.dup2(to.fileno(), self.fd)  # fd writes to 'to' file
-        self.target = os.fdopen(self.fd, 'w')  # Python writes to fd
+        # self.target = os.fdopen(self.fd, 'w')  # Python writes to fd
