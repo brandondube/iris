@@ -15,16 +15,16 @@ class forcefully_redirect_stdout(object):
     Attributes
     ----------
     captured : `str`
-        The captured text.
+        The captured text
     fd : filedescriptor
-        System filedescriptor.  Do not access.
+        System filedescriptor.  Do not access
     old_stdout : either `sys.stdout` or `sys.__stdout__`
         The old stdout, useful to write to it with the context manager even during
-        redirection.
+        redirection
     target : either `sys.stdout` or `sys.__stdout__`
-        The target to redirect.
+        The target to redirect
     to : `str` or file_like
-        Where to redirect output to.
+        Where to redirect output to
 
     """
 
@@ -37,7 +37,7 @@ class forcefully_redirect_stdout(object):
             what to redirect to.  If type(to) is `None`, internally uses a
             `tempfile.SpooledTemporaryFile` and returns a UTF-8 string
             containing the captured output.  If type(to) is str, opens a file at
-            that path and pipes output into it, erasing prior contents.
+            that path and pipes output into it, erasing prior contents
 
         """
         # typecheck sys.stdout -- if it's a textwrapper, we're in a shell
@@ -67,7 +67,7 @@ class forcefully_redirect_stdout(object):
         Returns
         -------
         forcefully_redirect_stoud
-            This instance of the context manager.
+            This instance of the context manager
 
         """
         self._redirect_stdout(to=self.to)
@@ -79,7 +79,7 @@ class forcefully_redirect_stdout(object):
         Parameters
         ----------
         *args
-            Any arguments; signature required of __exit__.
+            Any arguments; signature required of __exit__
 
         """
         self._redirect_stdout(to=self.old_stdout)
@@ -93,7 +93,7 @@ class forcefully_redirect_stdout(object):
         Parameters
         ----------
         to : `str` or file_like
-            where to send stdout to.
+            where to send stdout to
 
         """
         self.target.close()  # implicit flush()
