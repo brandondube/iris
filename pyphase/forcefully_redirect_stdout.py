@@ -3,113 +3,33 @@ import io
 import os
 import sys
 import tempfile
+import contextlib
 
 
-class forcefully_redirect_stdout(object):
-    """A context manager that redirects stdout, even non-python code.
+@contextlib.contextmanager
+def forcefully_redirect_stdout():
+    """Redirect stdout at the system level.
 
-    Forces stdout to be redirected, for both python code and C/C++/Fortran
-    or other linked libraries.  Useful for scraping values from e.g. the
-    disp option for scipy.optimize.minimize.
+    Used to capture data from scipy.optimize.minimize
 
-    Attributes
-    ----------
-    captured : `str`
-        The captured text
-    fd : filedescriptor
-        System filedescriptor.  Do not access
-    old_stdout : either `sys.stdout` or `sys.__stdout__`
-        The old stdout, useful to write to it with the context manager even during
-        redirection
-    target : either `sys.stdout` or `sys.__stdout__`
-        The target to redirect
-    to : `str` or file_like
-        Where to redirect output to
+    Yields:
+        `dict`: dict with a txt key after the context exits
 
     """
+    if type(sys.stdout) is io.TextIOWrapper:
+        target = sys.stdout
+    else:
+        target = sys.__stdout__
 
-    def __init__(self, to=None):
-        """Create a new forcefully_redirect_stdout context manager.
-
-        Parameters
-        ----------
-        to : `None` or `str`
-            what to redirect to.  If type(to) is `None`, internally uses a
-            `tempfile.SpooledTemporaryFile` and returns a UTF-8 string
-            containing the captured output.  If type(to) is str, opens a file at
-            that path and pipes output into it, erasing prior contents
-
-        """
-        # typecheck sys.stdout -- if it's a textwrapper, we're in a shell
-        # if it's not, we're likely in an IPython terminal or jupyter kernel
-        # and need to target sys.__stdout__ instead of sys.stdout
-        if type(sys.stdout) is io.TextIOWrapper:
-            self.target = sys.stdout
-        else:
-            self.target = sys.__stdout__
-
-        # initialize where we will redirect to and a file descriptor for python
-        # stdout -- self.target is used by python, while os.fd(1) is used by
-        # C/C++/Fortran/etc
-        self.to = to
-        self.fd = self.target.fileno()
-        if self.to is None:
-            self.to = tempfile.SpooledTemporaryFile(mode='w+b')
-        else:
-            self.to = open(to, 'w+b')
-
-        # self.old_stdout = os.fdopen(os.dup(self.fd), 'w')
-        self.captured = ''
-
-    def __enter__(self):
-        """Upon entering the context.
-
-        Returns
-        -------
-        forcefully_redirect_stoud
-            This instance of the context manager
-
-        """
-        self._redirect_stdout(to=self.to)
-        return self
-
-    def __exit__(self, *args):
-        """Upon exiting the context.
-
-        Parameters
-        ----------
-        *args
-            Any arguments; signature required of __exit__
-
-        """
-        # restore stdout to its original condition
-        self.target.flush()
-        os.dup2(self.to.fileno(), self.fd)
-
-        # close the redirection point and capture text from it
-        self.captured = self.to.read().decode('utf-8')
-        # self.to.close()
-        self.target = os.fdopen(1)
-        # self._redirect_stdout(to=self.old_stdout)
-
-        with open('whygod.txt', 'w') as fid:
-            fd = sys.stdout.fileno()
-            fid.write(str(type(sys.stdout)))
-            fid.write(str(fd))
-            fid.write('\n')
-            fid.write(str(os.dup(fd)))
-            fid.write('\n')
-            fid.write(str(self.fd))
-
-    def _redirect_stdout(self, to):
-        """Redirect stdout to the new location.
-
-        Parameters
-        ----------
-        to : `str` or file_like
-            where to send stdout to
-
-        """
-        self.target.flush()
-        os.dup2(to.fileno(), self.fd)  # fd writes to 'to' file
-        # self.target = os.fdopen(self.fd, 'w')  # Python writes to fd
+    fd = target.fileno()
+    restore_fd = os.dup(fd)
+    try:
+        tmp, out = tempfile.SpooledTemporaryFile(mode='w+b'), {}
+        os.dup2(tmp.fileno(), fd)
+        yield out
+        os.dup2(restore_fd, fd)
+    finally:
+        tmp.flush()
+        tmp.seek(0)
+        out['txt'] = tmp.read().decode('utf-8')
+        tmp.close()
