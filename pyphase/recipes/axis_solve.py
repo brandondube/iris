@@ -11,6 +11,7 @@ from scipy.optimize import minimize
 from prysm import FringeZernike, Seidel, MTF
 from prysm.thinlens import image_displacement_to_defocus
 from prysm.mtf_utils import mtf_ts_extractor
+from prysm.otf import diffraction_limited_mtf
 
 from pyphase.util import mtf_cost_fcn, net_costfcn_reducer, parse_cost_by_iter_lbfgsb
 from pyphase.forcefully_redirect_stdout import forcefully_redirect_stdout
@@ -73,11 +74,12 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
         value of the cost function for this focus plane realization.
 
     """
-    global setup_parameters
+    global setup_parameters, diffraction
     prop_wvfront = base_wavefront + defocus_wavefront
     mtf = MTF.from_pupil(prop_wvfront, setup_parameters['efl'])
     t, s = mtf_ts_extractor(mtf, setup_parameters['freqs'])
-    return mtf_cost_fcn(t_true, s_true, t, s)
+    t, s = t / diffraction, s / diffraction
+    return mtf_cost_fcn(t_true / diffraction, s_true / diffraction, t, s)
 
 
 def optfcn(wavefrontcoefs):
@@ -144,7 +146,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
 
     """
     # declare some state for this run as global variables to speed up access in multiprocess pool
-    global t_true, s_true, setup_parameters, decoder_ring, defocus_pupils, pool
+    global t_true, s_true, setup_parameters, decoder_ring, defocus_pupils, diffraction, pool
     setup_parameters = sys_parameters
     (focus_diversity,
      ax_t, ax_s) = grab_axial_data(setup_parameters, truth_dataframe)
@@ -156,16 +158,18 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
     # precompute the defocus wavefronts to accelerate solving
     s = setup_parameters
 
-    efl, fno, wvl, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
+    efl, fno, wvl, freqs, samples = s['efl'], s['fno'], s['wavelength'], s['freqs'], s['samples']
+    diffraction = diffraction_limited_mtf(fno, wvl, frequencies=freqs)
+    defocus_pupils = []
+    for focus in focus_diversity:
+        defocus_pupils.append(Seidel(W020=focus, epd=efl / fno, wavelength=wvl, samples=samples))
+
     decoder_ring = {
         0: 'Z4',
         1: 'Z9',
         2: 'Z16',
         3: 'Z25',
     }
-    defocus_pupils = []
-    for focus in focus_diversity:
-        defocus_pupils.append(Seidel(W020=focus, epd=efl / fno, wavelength=wvl, samples=samples))
 
     _globals = {
         't_true': t_true,
@@ -173,6 +177,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         'setup_parameters': setup_parameters,
         'decoder_ring': decoder_ring,
         'defocus_pupils': defocus_pupils,
+        'diffraction': diffraction,
     }
     pool = Pool(processes=os.cpu_count() - 1, initializer=ready_pool, initargs=[_globals])
     optimizer_function = optfcn
