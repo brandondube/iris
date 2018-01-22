@@ -16,9 +16,9 @@ def forcefully_redirect_stdout():
         `dict`: dict with a txt key after the context exits
 
     """
-    if type(sys.stdout) is io.TextIOWrapper:
+    if type(sys.stdout) is io.TextIOWrapper:  # console / command line
         target = sys.stdout
-    else:
+    else:  # jupyter
         target = sys.__stdout__
 
     fd = target.fileno()
