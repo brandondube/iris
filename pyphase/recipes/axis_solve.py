@@ -60,13 +60,13 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
     Parameters
     ----------
     base_wavefront : prysm.Pupil
-        a prysm Pupil object.
+        a prysm Pupil object
     t_true : numpy.ndarray
-        array of true MTF values.
+        array of true MTF values
     s_true : numpy.ndarray
-        array of true MTF values.
+        array of true MTF values
     defocus_wavefront : Pupil
-        a prysm Pupil object.
+        a prysm Pupil object
 
     Returns
     -------
@@ -79,7 +79,8 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
     mtf = MTF.from_pupil(prop_wvfront, setup_parameters['efl'])
     t, s = mtf_ts_extractor(mtf, setup_parameters['freqs'])
     t, s = t / diffraction, s / diffraction
-    return mtf_cost_fcn(t_true / diffraction, s_true / diffraction, t, s)
+    t_true, s_true = t_true / diffraction, s_true / diffraction
+    return mtf_cost_fcn(t_true, s_true, t, s)
 
 
 def optfcn(wavefrontcoefs):
@@ -88,7 +89,7 @@ def optfcn(wavefrontcoefs):
     Parameters
     ----------
     wavefrontcoefs : iterable
-        a vector of wavefront coefficients.
+        a vector of wavefront coefficients
 
     Returns
     -------
@@ -128,11 +129,11 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
     Parameters
     ----------
     sys_parameters : dict
-        dictionary with keys `efl`, `fno`, `wavelength`, `samples`.
+        dictionary with keys `efl`, `fno`, `wavelength`, `samples`
     truth_dataframe : pandas.DataFrame
-        a dataframe containing truth values.
+        a dataframe containing truth values
     guess : iterable, optional
-        guess coefficients for the wavefront.
+        guess coefficients for the wavefront
 
     Returns
     -------
@@ -142,7 +143,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
     Raises
     ------
     Exception
-        Any exceptions raised by called functions are re-raised by this function.
+        Any exceptions raised by called functions are re-raised by this function
 
     """
     # declare some state for this run as global variables to speed up access in multiprocess pool
@@ -212,10 +213,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         result.x_iter = parameter_vectors
         result.fun_iter = cost_by_iter
         result.time = t_end - t_start
-        pool.close()
-        pool.join()
         return result
-    except Exception as e:
-        pool.close()
+    finally:
         pool.join()
-        raise e
+        pool.close()
