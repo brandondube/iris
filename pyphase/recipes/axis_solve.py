@@ -174,7 +174,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         'decoder_ring': decoder_ring,
         'defocus_pupils': defocus_pupils,
     }
-    pool = Pool(processes=os.cpu_count()-1, initializer=ready_pool, initargs=[_globals])
+    pool = Pool(processes=os.cpu_count() - 1, initializer=ready_pool, initargs=[_globals])
     optimizer_function = optfcn
     parameter_vectors = []
 
@@ -184,7 +184,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
     try:
         t_start = time.perf_counter()
         # do the optimization and capture the per-iteration information from stdout
-        with forcefully_redirect_stdout() as txt:
+        with forcefully_redirect_stdout() as out:
             result = minimize(
                 fun=optimizer_function,
                 x0=guess,
@@ -198,7 +198,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
 
         t_end = time.perf_counter()
         # grab the extra data
-        cost_by_iter = parse_cost_by_iter_lbfgsb(txt.captured)
+        cost_by_iter = parse_cost_by_iter_lbfgsb(out['txt'])
 
         # add the guess to the front of the parameter vectors
         # cost_init = optfcn_seq(setup_parameters, focus_diversity, ax_t, ax_s, guess)
