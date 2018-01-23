@@ -215,5 +215,5 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         result.time = t_end - t_start
         return result
     finally:
-        pool.join()
         pool.close()
+        pool.join()
