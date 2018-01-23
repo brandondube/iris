@@ -59,18 +59,18 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
 
     Parameters
     ----------
-    base_wavefront : prysm.Pupil
+    base_wavefront : `prysm.Pupil`
         a prysm Pupil object
-    t_true : numpy.ndarray
+    t_true : `numpy.ndarray`
         array of true MTF values
-    s_true : numpy.ndarray
+    s_true : `numpy.ndarray`
         array of true MTF values
-    defocus_wavefront : Pupil
+    defocus_wavefront : `prysm.Pupil`
         a prysm Pupil object
 
     Returns
     -------
-    float
+    `float`
         value of the cost function for this focus plane realization.
 
     """
@@ -93,7 +93,7 @@ def optfcn(wavefrontcoefs):
 
     Returns
     -------
-    float
+    `float`
         cost function value
 
     """
@@ -116,8 +116,8 @@ def ready_pool(arg_dict):
 
     Parameters
     ----------
-    arg_dict : dict
-        dictionary of key/value pairs of variable names and values to expose at the global level.
+    arg_dict : `dict`
+        dictionary of key/value pairs of variable names and values to expose at the global level
 
     """
     globals().update(arg_dict)
@@ -128,22 +128,29 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
 
     Parameters
     ----------
-    sys_parameters : dict
-        dictionary with keys `efl`, `fno`, `wavelength`, `samples`
-    truth_dataframe : pandas.DataFrame
+    sys_parameters : `dict`
+        dictionary with keys efl, fno, wavelength, samples
+    truth_dataframe : `pandas.DataFrame`
         a dataframe containing truth values
     guess : iterable, optional
         guess coefficients for the wavefront
 
     Returns
     -------
-    TYPE
-        Description
-
-    Raises
-    ------
-    Exception
-        Any exceptions raised by called functions are re-raised by this function
+    `object`
+        an object with attributes:
+            - fun
+            - fun_iter
+            - hess_inv
+            - jac
+            - message
+            - nfev
+            - nit
+            - status
+            - success
+            - time
+            - x
+            - x_iter
 
     """
     # declare some state for this run as global variables to speed up access in multiprocess pool
