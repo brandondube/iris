@@ -1,15 +1,30 @@
-''' Tools for plotting the results of phase retrieval
-'''
+"""Tools for plotting the results of wavefront sensing."""
 import numpy as np
 from matplotlib import pyplot as plt
-plt.style.use('ggplot')
 
 
-def single_solve_triple(result_document, type='axis_sph', log=False, fig=None, axs=None):
-    ''' Plots a quadchart for a single solve, giving full diagnostic information
-        into the result.
+def single_solve_triple(result_document, log=False, fig=None, axs=None):
+    """Plot a quadchart for a single solve, giving full diagnostic information into the result.
 
-    '''
+    Parameters
+    ----------
+    result_document : `dict`
+        `dict` optimization result including initial values
+    log : bool, optional
+        whether to use a logarithmic scale
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    """
     if log is False:
         scale = 'linear'
     else:
@@ -54,9 +69,26 @@ def single_solve_triple(result_document, type='axis_sph', log=False, fig=None, a
 
 
 def single_solve_paper(result_document, fig=None, axs=None):
-    ''' Plots the convergence of parameters on a symmetric log scale
-    '''
+    """Plot the convergence of parameters on a symmetric log scale.
 
+    Parameters
+    ----------
+    result_document : `dict`
+        `dict` optimization result including initial values
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    """
     rd = result_document
     truth = rd['truth_zernike']
     truths = np.asarray(list(truth.values()), dtype=np.float64)
