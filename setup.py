@@ -1,11 +1,11 @@
 from setuptools import setup
 
 setup(
-    name='pyphase',
+    name='iris',
     version='0.0.1',
-    description='A python-based phase retrieval module',
+    description='A python-based wavefront sensing module',
     long_description='',
-    license='MIT',
+    license='Copyright (C) 2017-2017 Brandon Dube, all rights reserved',
     author='Brandon Dube',
     author_email='brandondube@gmail.com',
     packages=['pyphase'],
