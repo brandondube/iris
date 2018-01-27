@@ -1,5 +1,6 @@
 """Misc. utilities."""
 import re
+from prysm.thinlens import image_displacement_to_defocus, defocus_to_image_displacement
 
 
 def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
@@ -70,6 +71,37 @@ def round_to_int(value, integer):
 
     """
     return integer * round(float(value) / integer)
+
+
+def make_focus_range_realistic_number_of_microns(config, round_focus_to=5):
+    """Create a modified config dictionary that has a focus range which is realistic for an MTF bench.
+
+    Parameters
+    ----------
+    config : `dict`
+        dict with keys focus_range_waves, fno, wavelength
+    round_focus_to : `int`, optional
+        integer number of microns to round focus to
+
+    Returns
+    -------
+    `dict`
+        modified dic that has same keys as input dict
+
+    """
+    d = config
+    focusdiv_wvs = d['focus_range_waves']
+    focusdiv_um = round_to_int(defocus_to_image_displacement(
+        focusdiv_wvs,
+        d['fno'],
+        d['wavelength']), round_focus_to)  # round to nearest x microns
+    # copy and update the focus diversity in the config dict
+    cfg = config.copy()
+    cfg['focus_range_waves'] = image_displacement_to_defocus(
+        focusdiv_um,
+        d['fno'],
+        d['wavelength'])
+    return cfg
 
 
 def parse_cost_by_iter_lbfgsb(string):
