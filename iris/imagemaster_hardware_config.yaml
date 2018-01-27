@@ -1,0 +1,15 @@
+common:
+  slit_width: 50                # microns
+  microscope_magnification: 50  # unitless
+  wavelength: 0.5460            # microns
+  bit_depth: 12                 # bpp, monochrome
+  pixel_pitch: 10               # microns
+  resolution:
+    - 648                       # W
+    - 488                       # H
+small_collimator:
+  focal_length: 300             # mm
+  diameter: 50                  # mm
+big_collimator:
+  focal_length: 600             # mm
+  diameter: 100                 # mm

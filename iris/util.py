@@ -1,5 +1,9 @@
 """Misc. utilities."""
 import re
+import io
+
+import numpy as np
+
 from prysm.thinlens import image_displacement_to_defocus, defocus_to_image_displacement
 
 
@@ -128,3 +132,27 @@ def parse_cost_by_iter_lbfgsb(string):
     # fortran value 3.0000000D+02 is equivalent to
     # python value  3.0000000E+02 with double precision
     return [float(s.replace('D', 'E')) for s in fortran_values]
+
+
+def pgm_img_to_array(imgstr):
+    """Convert a string version of an ASCII pgm file to a numpy array.
+
+    Parameters
+    ----------
+    imgstr : `str`
+        image as a string
+
+    Returns
+    -------
+    `numpy.ndarray`
+        2D ndarray of the image
+
+    Notes
+    -----
+    Operates under the assumption that the image will be to the specification
+    used by the trioptics imagemaster HR; that is, the header shall be 3 lines
+    long.
+
+    """
+    string = io.StringIO(imgstr)
+    return np.loadtxt(string, dtype=np.int16, skiprows=3)
