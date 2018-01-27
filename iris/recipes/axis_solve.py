@@ -78,8 +78,8 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
     prop_wvfront = base_wavefront + defocus_wavefront
     mtf = MTF.from_pupil(prop_wvfront, setup_parameters['efl'])
     t, s = mtf_ts_extractor(mtf, setup_parameters['freqs'])
-    t, s = t / diffraction, s / diffraction
-    t_true, s_true = t_true / diffraction, s_true / diffraction
+    # t, s = t / diffraction, s / diffraction
+    # t_true, s_true = t_true / diffraction, s_true / diffraction
     return mtf_cost_fcn(t_true, s_true, t, s)
 
 

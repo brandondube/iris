@@ -2,6 +2,8 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
+from prysm.util import share_fig_ax
+
 
 def single_solve_triple(result_document, log=False, fig=None, axs=None):
     """Plot a quadchart for a single solve, giving full diagnostic information into the result.
@@ -118,3 +120,69 @@ def single_solve_paper(result_document, fig=None, axs=None):
 
     fig.tight_layout()
     return fig, axs
+
+
+def plot_costfcn_by_iter(results, fig=None, ax=None):
+    """Plot the cost function by iteration.
+
+    Parameters
+    ----------
+    results : `dict`
+        results dictionary, with fun_iter key
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    """
+    cost = results['fun_iter']
+    x = range(len(cost))
+    fig, ax = share_fig_ax(fig, ax)
+    ax.plot(x, cost, lw=3)
+
+    return fig, ax
+
+
+def plot_mtf_focus_grid(data, frequencies, focus, fig=None, ax=None):
+    """Plot a 2D view of MTF through frequency and focus.
+
+    Parameters
+    ----------
+    data : `numpy.ndarray`
+        2D ndarray with dimensions of frequency,focus
+    frequencies : iterable
+        fequencies the data is given at; x axes, cy/mm
+    focus : iterable
+        focus points the data is given at; y axes, microns
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    """
+    xlims = (frequencies[0], frequencies[-1])
+    ylims = (focus[0], focus[-1])
+    fig, ax = share_fig_ax(fig, ax)
+    ax.imshow(data,
+              extent=[*xlims, *ylims],
+              origin='lower',
+              aspect='auto',
+              interpolation='lanczos')
+    ax.set(xlim=xlims, xlabel='Spatial Frequency $\nu$ [cy/mm]',
+           ylim=ylims, ylabel='Focus [$\mu$ m]')
+
+    return fig, ax
