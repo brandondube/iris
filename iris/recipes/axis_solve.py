@@ -9,49 +9,11 @@ import numpy as np
 from scipy.optimize import minimize
 
 from prysm import FringeZernike, Seidel, MTF
-from prysm.thinlens import image_displacement_to_defocus
 from prysm.mtf_utils import mtf_ts_extractor
 from prysm.otf import diffraction_limited_mtf
 
-from pyphase.util import mtf_cost_fcn, net_costfcn_reducer, parse_cost_by_iter_lbfgsb
+from pyphase.util import mtf_cost_fcn, net_costfcn_reducer, parse_cost_by_iter_lbfgsb, grab_axial_data
 from pyphase.forcefully_redirect_stdout import forcefully_redirect_stdout
-
-
-def grab_axial_data(setup_parameters, truth_dataframe):
-    """Pull axial through-focus MTF data from a pandas DataFrame.
-
-    Parameters
-    ----------
-    setup_parameters : dict
-        dictionary with keys `fno` and `wavelength`
-    truth_dataframe : pandas.DataFrame
-        Dataframe with columns `Field`, `Focus`, `Azimuth`, and `MTF`.
-
-    Returns
-    -------
-    wvfront_defocus : numpy.ndarray
-        array of defocus values in waves zero to peak.
-    ax_t : numpy.ndarray
-        array of tangential MTF values.
-    ax_s : numpy.ndarray
-        array of sagittal MTF values.
-
-    """
-    s = setup_parameters
-    axial_mtf_data = truth_dataframe[truth_dataframe.Field == 0]
-    focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
-    wvfront_defocus = image_displacement_to_defocus(focuspos, s['fno'], s['wavelength'])
-    ax_t = []
-    ax_s = []
-    for pos in focuspos:
-        fd = axial_mtf_data[axial_mtf_data.Focus == pos]
-        ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].as_matrix())
-        ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].as_matrix())
-
-    wvfront_defocus = np.asarray(wvfront_defocus)
-    ax_t = np.asarray(ax_t)
-    ax_s = np.asarray(ax_s)
-    return wvfront_defocus, ax_t, ax_s
 
 
 def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):

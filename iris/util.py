@@ -58,6 +58,43 @@ def net_costfcn_reducer(costfcn):
     return sum(costfcn) / len(costfcn) * 100
 
 
+def grab_axial_data(setup_parameters, truth_dataframe):
+    """Pull axial through-focus MTF data from a pandas DataFrame.
+
+    Parameters
+    ----------
+    setup_parameters : dict
+        dictionary with keys `fno` and `wavelength`
+    truth_dataframe : pandas.DataFrame
+        Dataframe with columns `Field`, `Focus`, `Azimuth`, and `MTF`.
+
+    Returns
+    -------
+    wvfront_defocus : numpy.ndarray
+        array of defocus values in waves zero to peak.
+    ax_t : numpy.ndarray
+        array of tangential MTF values.
+    ax_s : numpy.ndarray
+        array of sagittal MTF values.
+
+    """
+    s = setup_parameters
+    axial_mtf_data = truth_dataframe[truth_dataframe.Field == 0]
+    focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
+    wvfront_defocus = image_displacement_to_defocus(focuspos, s['fno'], s['wavelength'])
+    ax_t = []
+    ax_s = []
+    for pos in focuspos:
+        fd = axial_mtf_data[axial_mtf_data.Focus == pos]
+        ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].as_matrix())
+        ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].as_matrix())
+
+    wvfront_defocus = np.asarray(wvfront_defocus)
+    ax_t = np.asarray(ax_t)
+    ax_s = np.asarray(ax_s)
+    return wvfront_defocus, ax_t, ax_s
+
+
 def round_to_int(value, integer):
     """Round a value to the nearest integer.
 
