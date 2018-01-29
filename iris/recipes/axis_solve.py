@@ -12,8 +12,8 @@ from prysm import FringeZernike, Seidel, MTF
 from prysm.mtf_utils import mtf_ts_extractor
 from prysm.otf import diffraction_limited_mtf
 
-from pyphase.util import mtf_cost_fcn, net_costfcn_reducer, parse_cost_by_iter_lbfgsb, grab_axial_data
-from pyphase.forcefully_redirect_stdout import forcefully_redirect_stdout
+from iris.util import mtf_cost_fcn, net_costfcn_reducer, parse_cost_by_iter_lbfgsb, grab_axial_data
+from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
 
 
 def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):

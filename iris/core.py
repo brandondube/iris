@@ -6,9 +6,8 @@ import numpy as np
 from prysm import FringeZernike, Seidel, MTF
 from prysm.thinlens import image_displacement_to_defocus, defocus_to_image_displacement
 
-from pyphase.mongoq import JobQueue
-from pyphase.util import round_to_int
-from pyphase.recipes import sph_from_focusdiverse_axial_mtf
+from iris.util import round_to_int
+from iris.recipes import sph_from_focusdiverse_axial_mtf
 
 
 def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
