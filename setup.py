@@ -9,7 +9,7 @@ setup(
     license='Copyright (C) 2017-2017 Brandon Dube, all rights reserved',
     author='Brandon Dube',
     author_email='brandondube@gmail.com',
-    packages=['pyphase'],
+    packages=['iris'],
     install_requires=['numpy', 'matplotlib', 'scipy'],
     classifiers=[
         'Development Status :: 4 - Beta',
