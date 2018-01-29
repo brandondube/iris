@@ -157,6 +157,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         parameter_vectors.append(x)
 
     try:
+        parameter_vectors.insert(0, np.asarray(guess))
         t_start = time.perf_counter()
         # do the optimization and capture the per-iteration information from stdout
         with forcefully_redirect_stdout() as out:
@@ -172,13 +173,8 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
                 callback=callback)
 
         t_end = time.perf_counter()
-        # grab the extra data
+        # grab the extra data and put everything on the optimizationresult
         cost_by_iter = parse_cost_by_iter_lbfgsb(out['txt'])
-
-        # add the guess to the front of the parameter vectors
-        # cost_init = optfcn_seq(setup_parameters, focus_diversity, ax_t, ax_s, guess)
-        parameter_vectors.insert(0, np.asarray(guess))
-        # cost_by_iter.insert(0, cost_init)
         result.x_iter = parameter_vectors
         result.fun_iter = cost_by_iter
         result.time = t_end - t_start
