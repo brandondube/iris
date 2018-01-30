@@ -167,7 +167,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'iris', 'iris Documentation',
-     author, 'iris', 'One line description of project.',
+     author, 'iris', 'Python-based wavefront sensing.',
      'Miscellaneous'),
 ]
 
@@ -175,4 +175,4 @@ texinfo_documents = [
 
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {'https://docs.python.org/': None}
+intersphinx_mapping = {'https://docs.python.org/3/': None}
