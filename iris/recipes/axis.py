@@ -1,7 +1,6 @@
 """Solve for aberrations on the optical axis given some truth MTF values and lens parameters."""
 import os
 import time
-from functools import partial
 from multiprocessing import Pool
 from itertools import product
 
@@ -9,11 +8,12 @@ import numpy as np
 
 from scipy.optimize import minimize
 
-from prysm import FringeZernike, Seidel, MTF
-from prysm.mtf_utils import mtf_ts_extractor
+from prysm import Seidel
 from prysm.otf import diffraction_limited_mtf
+from prysm.thinlens import image_displacement_to_defocus
 
-from iris.util import mtf_cost_fcn, net_costfcn_reducer, parse_cost_by_iter_lbfgsb, grab_axial_data
+from iris.core import optfcn, ready_pool
+from iris.utilities import parse_cost_by_iter_lbfgsb
 from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
 
 
@@ -55,73 +55,41 @@ def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
     return coefs
 
 
-def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
-    """Compute the cost function for a single focal plane.
+def grab_axial_data(setup_parameters, truth_dataframe):
+    """Pull axial through-focus MTF data from a pandas DataFrame.
 
     Parameters
     ----------
-    base_wavefront : `prysm.Pupil`
-        a prysm Pupil object
-    t_true : `numpy.ndarray`
-        array of true MTF values
-    s_true : `numpy.ndarray`
-        array of true MTF values
-    defocus_wavefront : `prysm.Pupil`
-        a prysm Pupil object
+    setup_parameters : dict
+        dictionary with keys `fno` and `wavelength`
+    truth_dataframe : pandas.DataFrame
+        Dataframe with columns `Field`, `Focus`, `Azimuth`, and `MTF`.
 
     Returns
     -------
-    `float`
-        value of the cost function for this focus plane realization.
+    wvfront_defocus : numpy.ndarray
+        array of defocus values in waves zero to peak.
+    ax_t : numpy.ndarray
+        array of tangential MTF values.
+    ax_s : numpy.ndarray
+        array of sagittal MTF values.
 
     """
-    global setup_parameters, diffraction
-    prop_wvfront = base_wavefront + defocus_wavefront
-    mtf = MTF.from_pupil(prop_wvfront, setup_parameters['efl'])
-    t, s = mtf_ts_extractor(mtf, setup_parameters['freqs'])
-    # t, s = t / diffraction, s / diffraction
-    # t_true, s_true = t_true / diffraction, s_true / diffraction
-    return mtf_cost_fcn(t_true, s_true, t, s)
-
-
-def optfcn(wavefrontcoefs):
-    """Optimization routine used to compare simulation data to measurement data.
-
-    Parameters
-    ----------
-    wavefrontcoefs : iterable
-        a vector of wavefront coefficients
-
-    Returns
-    -------
-    `float`
-        cost function value
-
-    """
-    # generate a "base pupil" with some aberration content
-    global setup_parameters, decoder_ring, pool, t_true, s_true, defocus_pupils
     s = setup_parameters
-    efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
-    pupil_pass_zernikes = {key: value for (key, value) in zip(decoder_ring.values(), wavefrontcoefs)}
-    pupil = FringeZernike(**pupil_pass_zernikes, base=1,
-                          epd=efl / fno, wavelength=wavelength, samples=samples)
+    axial_mtf_data = truth_dataframe[truth_dataframe.Field == 0]
+    focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
+    wvfront_defocus = image_displacement_to_defocus(focuspos, s['fno'], s['wavelength'])
+    ax_t = []
+    ax_s = []
+    for pos in focuspos:
+        fd = axial_mtf_data[axial_mtf_data.Focus == pos]
+        ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].as_matrix())
+        ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].as_matrix())
 
-    # for each focus plane, compute the cost function
-    rfp_mp = partial(realize_focus_plane, pupil)
-    costfcn = pool.starmap(rfp_mp, zip(t_true, s_true, defocus_pupils))
-    return net_costfcn_reducer(costfcn)
-
-
-def ready_pool(arg_dict):
-    """Initialize global variables inside process pool for windows support of shared read-only global state.
-
-    Parameters
-    ----------
-    arg_dict : `dict`
-        dictionary of key/value pairs of variable names and values to expose at the global level
-
-    """
-    globals().update(arg_dict)
+    wvfront_defocus = np.asarray(wvfront_defocus)
+    ax_t = np.asarray(ax_t)
+    ax_s = np.asarray(ax_s)
+    return wvfront_defocus, ax_t, ax_s
 
 
 def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0, 0, 0)):
@@ -130,7 +98,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
     Parameters
     ----------
     sys_parameters : `dict`
-        dictionary with keys efl, fno, wavelength, samples
+        dictionary with keys efl, fno, wavelength, samples, focus_planes, focus_range_waves, freqs, freq_step
     truth_dataframe : `pandas.DataFrame`
         a dataframe containing truth values
     guess : iterable, optional
@@ -189,6 +157,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         'diffraction': diffraction,
     }
     pool = Pool(processes=os.cpu_count() - 1, initializer=ready_pool, initargs=[_globals])
+    ready_pool({**_globals, **{'pool': pool}})
     optimizer_function = optfcn
     parameter_vectors = []
 
