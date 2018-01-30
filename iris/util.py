@@ -1,6 +1,7 @@
 """Misc. utilities."""
 import re
 import io
+from operator import itemgetter
 
 import numpy as np
 
@@ -169,6 +170,56 @@ def parse_cost_by_iter_lbfgsb(string):
     # fortran value 3.0000000D+02 is equivalent to
     # python value  3.0000000E+02 with double precision
     return [float(s.replace('D', 'E')) for s in fortran_values]
+
+
+def prepare_document(sim_params, codex, truth_params, truth_rmswfe, normed, optimization_result):
+        """Prepare a document (dict) for insertion into the results database.
+
+        Parameters
+        ----------
+        sim_params : `dict`
+            dictionary with keys for efl, fno, wavelength, samples, focus_planes, focus_range_waves, freqs
+        codex : `dict`
+            dictionary with integer keys in [0, len(truth_params)] and values 'Z1'..'Z49'; each key
+                is a position in the parameter vector and each value is the appropriate zernike.
+        truth_parms: iterable
+            truth parameters
+        truth_rmswfe: `float`
+            RMS WFE of the truth
+        normed : `bool`
+            if the coefficients should be made unit RMS value
+        optimization_result : object
+            object with keys x, x_iter, fun, fun_iter, time
+
+        Returns
+        -------
+        dict
+            dictionary with keys, types:
+                - sim_params, dict
+                - codex, dict
+                - truth_params, tuple
+                - truth_rmswfe, float
+                - zernike_norm, bool
+                - result_final, tuple
+                - result_iter, list
+                - cost_final, float
+                - cost_iter, list
+                - time, float
+
+        """
+        x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
+        return {
+            'sim_params': sim_params,
+            'codex': codex,
+            'truth_params': truth_params,
+            'truth_rmswfe': truth_rmswfe,
+            'zernike_normed': normed,
+            'result_final': x,
+            'result_iter': xiter,
+            'cost_final': f,
+            'cost_iter': fiter,
+            'time': t,
+        }
 
 
 def pgm_img_to_array(imgstr):
