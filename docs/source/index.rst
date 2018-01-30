@@ -12,3 +12,4 @@ The following pieces of documentation are available:
     :maxdepth: 1
 
     structure
+    iris
