@@ -156,7 +156,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         'defocus_pupils': defocus_pupils,
         'diffraction': diffraction,
     }
-    pool = Pool(processes=os.cpu_count(), initializer=ready_pool, initargs=[_globals])
+    pool = Pool(processes=os.cpu_count() - 1, initializer=ready_pool, initargs=[_globals])
     ready_pool({**_globals, **{'pool': pool}})
     optimizer_function = optfcn
     parameter_vectors = []
