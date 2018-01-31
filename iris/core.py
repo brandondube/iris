@@ -105,8 +105,13 @@ def optfcn(wavefrontcoefs):
                           epd=efl / fno, wavelength=wavelength, samples=samples)
 
     # for each focus plane, compute the cost function
-    rfp_mp = partial(realize_focus_plane, pupil)
-    costfcn = pool.starmap(rfp_mp, zip(t_true, s_true, defocus_pupils))
+    if pool is not None:
+        rfp_mp = partial(realize_focus_plane, pupil)
+        costfcn = pool.starmap(rfp_mp, zip(t_true, s_true, defocus_pupils))
+    else:
+        costfcn = []
+        for t, s, defocus in zip(t_true, s_true, defocus_pupils):
+            costfcn.append(realize_focus_plane(pupil, t, s, defocus))
     return average_mse_focusplanes(costfcn)
 
 
