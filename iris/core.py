@@ -72,7 +72,7 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
     Returns
     -------
     `float`
-        value of the cost function for this focus plane realization.
+        value of the cost function for this focus plane realization
 
     """
     global setup_parameters, diffraction
