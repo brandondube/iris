@@ -25,9 +25,7 @@ def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
 
     Notes
     -----
-    Algorithm is
-    sum((M - S)^2)
-    a "middleware" architecture is used to allow normalizations after this is run
+    Simply the sum of the square of differences between the model and truth data.
 
     """
     t = ((true_tan - sim_tan) ** 2).sum()
