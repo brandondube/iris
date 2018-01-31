@@ -115,7 +115,7 @@ def optfcn(wavefrontcoefs):
     return average_mse_focusplanes(costfcn)
 
 
-def ready_pool(arg_dict):
+def prepare_globals(arg_dict):
     """Initialize global variables inside process pool for windows support of shared read-only global state.
 
     Parameters

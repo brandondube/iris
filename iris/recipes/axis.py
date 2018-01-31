@@ -12,7 +12,7 @@ from prysm import Seidel
 from prysm.otf import diffraction_limited_mtf
 from prysm.thinlens import image_displacement_to_defocus
 
-from iris.core import optfcn, ready_pool
+from iris.core import optfcn, ready_globals
 from iris.utilities import parse_cost_by_iter_lbfgsb
 from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
 
@@ -156,8 +156,8 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         'defocus_pupils': defocus_pupils,
         'diffraction': diffraction,
     }
-    pool = Pool(processes=os.cpu_count() - 1, initializer=ready_pool, initargs=[_globals])
-    ready_pool({**_globals, **{'pool': pool}})
+    pool = Pool(processes=os.cpu_count() - 1, initializer=ready_globals, initargs=[_globals])
+    ready_globals({**_globals, **{'pool': pool}})
     optimizer_function = optfcn
     parameter_vectors = []
 
