@@ -80,6 +80,8 @@ Optimization
 
 .. [#] :math:`\sum x dx` is a popular numerical integration technique; this modifier changes the meaning of the cost function to be integration over the spatial frequency dimension and normalizes by the number of focus planes.
 
+* after each iteration, append the parameter vector chosen at the end of line search to the list initialized in preparation.
+
 Cleanup
 -------
 
