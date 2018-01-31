@@ -75,7 +75,7 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
         value of the cost function for this focus plane realization
 
     """
-    global setup_parameters, diffraction
+    global setup_parameters
     prop_wvfront = base_wavefront + defocus_wavefront
     mtf = MTF.from_pupil(prop_wvfront, setup_parameters['efl'])
     t, s = mtf_ts_extractor(mtf, setup_parameters['freqs'])
