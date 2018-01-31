@@ -118,5 +118,10 @@ def ready_pool(arg_dict):
     arg_dict : `dict`
         dictionary of key/value pairs of variable names and values to expose at the global level
 
+    Notes
+    -----
+    globals() returns the global object specific to this file; these globals will not be shared with
+    other modules.
+
     """
     globals().update(arg_dict)
