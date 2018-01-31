@@ -3,14 +3,14 @@ from setuptools import setup
 
 setup(
     name='iris',
-    version='0.0.9',
+    version='0.0.10',
     description='A python-based wavefront sensing module',
     long_description='',
-    license='Copyright (C) 2017-2017 Brandon Dube, all rights reserved',
+    license='Copyright (C) 2017-2018 Brandon Dube, all rights reserved',
     author='Brandon Dube',
     author_email='brandondube@gmail.com',
     packages=['iris'],
-    install_requires=['numpy', 'matplotlib', 'scipy'],
+    install_requires=['numpy', 'matplotlib', 'scipy', 'prysm'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
