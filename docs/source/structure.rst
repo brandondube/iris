@@ -52,11 +52,13 @@ Preparation
 * create a list and append the initial guess.
 * create a "decoder ring" of parameter vector positions and zernike names (e.g. 3 -> Z9).
 * spin up a pool of worker processes to realize focus planes.
-* assign the following global variables:
+* assign the following global variables
+
     * truth data
     * configuration data (EFL, wavelength, F/#, etc)
     * defocus pupils
     * diffraction limited MTF
+
 * start timer.
 
 Optimization
@@ -76,7 +78,7 @@ Optimization
 .. math::
     C_f = \frac{d\nu}{N_{\text{focus}}}C_i
 
-.. [#] :math:`\sum x dx` is a popular numerical integration technique; this modifier integrates over the spatial frequency dimension and normalizes by the number of focus planes.
+.. [#] :math:`\sum x dx` is a popular numerical integration technique; this modifier changes the meaning of the cost function to be integration over the spatial frequency dimension and normalizes by the number of focus planes.
 
 Cleanup
 -------
