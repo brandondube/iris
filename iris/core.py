@@ -48,7 +48,8 @@ def average_mse_focusplanes(costfcn):
 
     Notes
     -----
-        Algorithm is simply a mean, multiplied by 100 to yield a percentage
+    Adjustment effectively integrates over frequency axis and normalizes to
+    average over focus planes.
 
     """
     return sum(costfcn) / len(costfcn) * setup_parameters['freq_step']
