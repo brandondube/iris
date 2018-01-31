@@ -32,6 +32,60 @@ iris has a somewhat novel architecture designed around being high performance an
 
 .. [#] This works very similarly to middleware in web server programming.
 
+
+Wavefront Sensing Routine
+=========================
+
+Wavefront sensing has three general phases:
+
+#.  Preparation / setup
+#.  Optimization
+#.  Cleanup and post processing
+
+Each is described below.
+
+Preparation
+-----------
+
+* preprocess truth data (format conversion, denoise/smoothing, etc).
+* Create a set of defocus pupils.
+* create a list and append the initial guess.
+* create a "decoder ring" of parameter vector positions and zernike names (e.g. 3 -> Z9).
+* spin up a pool of worker processes to realize focus planes.
+* assign the following global variables:
+    * truth data
+    * configuration data (EFL, wavelength, F/#, etc)
+    * defocus pupils
+    * diffraction limited MTF
+* start timer.
+
+Optimization
+------------
+
+* forcefully redirect stdout to capture disp statements from the optimizer.
+* generate the "notionally in focus" pupil for the given parameter vector.
+* merge it with each defocus PSF and propogate each to its own MTF.
+* compute the cost function, where :math:`C_i` denotes "initial cost."
+
+.. math::
+
+    C_i = \sum_{\text{focus}} \, \sum_{\nu=10}^{\nu_\text{c}} \left(\text{D} - \text{M}\right)^2
+
+* apply the cost function modifier, where :math:`C_f` denotes "final cost." [#]_
+
+.. math::
+    C_f = \frac{d\nu}{N_{\text{focus}}}C_i
+
+.. [#] :math:`\sum x dx` is a popular numerical integration technique; this modifier integrates over the spatial frequency dimension and normalizes by the number of focus planes.
+
+Cleanup
+-------
+
+* stop timer.
+* parse L-BFGS-B disp statements for cost function by iteration.
+* compute residual RMS WFE by iteration.
+* store all results in a dictionary.
+
 Performance Optimizations
 =========================
 
