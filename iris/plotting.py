@@ -186,3 +186,46 @@ def plot_mtf_focus_grid(data, frequencies, focus, fig=None, ax=None):
            ylim=ylims, ylabel='Focus [$\mu$ m]')
 
     return fig, ax
+
+
+def plot_2d_optframe(data, max_freq=None, focus_range=None, focus_unit=r'$\mu m$', fig=None, ax=None):
+    """Plot an image view of the data.
+
+    Parameters
+    ----------
+    data : `numpy.ndarray`
+        2D data with first dimension spatial frequency, second dimension focus
+    max_freq : `float`, optional
+        maximum spatial frequency to plot, x axis range will be [0,max_freq]
+    focus_range : `float`, optional
+        maximum defocus value to plot, y axis range will be [-focus_range,focus_range]
+    focus_unit : str, optional
+        unit of focus, e.g. um or waves
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    """
+    fig, ax = share_fig_ax(fig, ax)
+
+    im = ax.imshow(data,
+                   extent=[0, max_freq, -focus_range, focus_range],
+                   aspect='auto',
+                   origin='lower',
+                   interpolation=None)
+
+    fig.colorbar(im)
+
+    if max_freq is not None and focus_range is not None:
+        ax.set(xlim=(0, max_freq), xlabel='Spatial Frequency [cy/mm]',
+               ylim=(-focus_range, focus_range), ylabel=f'Focus [{focus_unit}]')
+
+    return fig, ax
