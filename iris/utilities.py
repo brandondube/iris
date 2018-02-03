@@ -105,7 +105,7 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, normed, opti
 
         Returns
         -------
-        dict
+        `dict`
             dictionary with keys, types:
                 - sim_params, dict
                 - codex, dict
