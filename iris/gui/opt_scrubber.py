@@ -79,6 +79,10 @@ def df_to_mtf_array(df, azimuth='Tan'):
     return df[df.Azimuth == azimuth].as_matrix(columns=['MTF']).reshape(cfg['focus_planes'], len(cfg['freqs']))
 
 
+OPTDATAKEY = 'mtfarr'
+WVFRONTKEY = 'wvfront'
+
+
 def populate_cache(iteration):
     """Populate the cache with MTF data for the given optimizer iteration.
 
@@ -95,8 +99,8 @@ def populate_cache(iteration):
     arr = df_to_mtf_array(data, 'Tan')
 
     # store them in the cache
-    CACHE[iteration]['wvfront'] = focus_pupil.phase
-    CACHE[iteration]['mtfarr'] = arr
+    CACHE[iteration][WVFRONTKEY] = focus_pupil.phase.copy()
+    CACHE[iteration][OPTDATAKEY] = arr
     return arr
 
 
@@ -145,6 +149,13 @@ class App(QMainWindow):
         self.main_layout.addLayout(self.plot_layout)
         self.main_layout.addLayout(self.slider_layout)
 
+        self.init_optdata_plot()
+        self.init_wavefront_plot()
+        self.init_slider()
+        self.show()
+
+    def init_optdata_plot(self):
+        """Initialize the optimization data plot."""
         # create a figure and two axes used to draw the truth data and the current iteration data
         self.opt_data_canvas = FigureCanvas(plt.figure())
         self.opt_fig = self.opt_data_canvas.figure
@@ -179,6 +190,10 @@ class App(QMainWindow):
         self.cb = self.opt_fig.colorbar(truth_im, cax=cbax)
         cbax.set(ylabel='MTF [Rel. 1.0]')
 
+        self.plot_layout.addWidget(self.opt_data_canvas)
+
+    def init_wavefront_plot(self):
+        """Initialize the wavefront plots."""
         # create another figure for the wavefront plots
         self.pup_ext = [-epd, epd, -epd, epd]
         self.wvfront_canvas = FigureCanvas(plt.figure())
@@ -194,7 +209,7 @@ class App(QMainWindow):
         self.citer_wv_ax.set(xlabel=r'Pupil $\xi$ [mm]', title='Current Iteration')
 
         # draw the first iteration image
-        imdat = CACHE[0]['wvfront']
+        imdat = CACHE[0][WVFRONTKEY]
         self.iter_wv_im = self.citer_wv_ax.imshow(imdat,
                                                   extent=self.pup_ext,
                                                   origin='lower',
@@ -209,10 +224,10 @@ class App(QMainWindow):
         cbax.yaxis.set_ticks_position('left')
         cbax.yaxis.set_label_position('left')
 
-        # add a label for the slider
-        self.slider_value_label = QLabel('00')
+        self.plot_layout.addWidget(self.wvfront_canvas)
 
-        # add a slider
+    def init_slider(self):
+        """Create and initialize the slider."""
         self.iteration_slider = QSlider(Qt.Horizontal)
         self.iteration_slider.setFocusPolicy(Qt.StrongFocus)
         self.iteration_slider.setTickInterval(1)
@@ -222,30 +237,34 @@ class App(QMainWindow):
         self.iteration_slider.setTickPosition(QSlider.TicksBelow)
         self.iteration_slider.valueChanged.connect(self.update)
 
-        # do the initial draw
-        self.plot_layout.addWidget(self.opt_data_canvas)
-        self.plot_layout.addWidget(self.wvfront_canvas)
-
+        self.slider_value_label = QLabel('00')
         self.slider_layout.addWidget(self.slider_value_label)
         self.slider_layout.addWidget(self.iteration_slider)
-        self.show()
 
     def update(self):
         """Update the UI from the current iteration number."""
-        iteration = self.iteration_slider.value()
-
-        # set the slider text
-        self.slider_value_label.setText(f'{iteration:02d}')
+        self.iteration = self.iteration_slider.value()
 
         # check if the cache image data has been made
-        if iteration in CACHE:
-            imdat = CACHE[iteration]['mtfarr']
-        else:
-            imdat = populate_cache(iteration)
+        if self.iteration not in CACHE:
+            populate_cache(self.iteration)
 
-        self.iter_dat_im.set_data(imdat)
-        self.iter_wv_im.set_data(CACHE[iteration]['wvfront'])
+        self.update_slidertext()
+        self.update_optdata_plot()
+        self.update_wavefront_plot()
+
+    def update_slidertext(self):
+        """Update the slider text."""
+        self.slider_value_label.setText(f'{self.iteration:02d}')
+
+    def update_optdata_plot(self):
+        """Update the optimization data plot."""
+        self.iter_dat_im.set_data(CACHE[self.iteration][OPTDATAKEY])
         self.opt_fig.canvas.draw_idle()
+
+    def update_wavefront_plot(self):
+        """Update the wavefront data plot."""
+        self.iter_wv_im.set_data(CACHE[self.iteration][WVFRONTKEY])
         self.wave_fig.canvas.draw_idle()
 
 
