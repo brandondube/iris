@@ -13,7 +13,7 @@ from prysm.otf import diffraction_limited_mtf
 from prysm.thinlens import image_displacement_to_defocus
 
 from iris.core import optfcn, prepare_globals
-from iris.utilities import parse_cost_by_iter_lbfgsb
+from iris.utilities import parse_cost_by_iter_lbfgsb, prepare_document
 from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
 
 
@@ -106,20 +106,18 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
 
     Returns
     -------
-    `object`
-        an object with attributes:
-            - fun
-            - fun_iter
-            - hess_inv
-            - jac
-            - message
-            - nfev
-            - nit
-            - status
-            - success
-            - time
-            - x
-            - x_iter
+    `dict`
+        dictionary with keys, types:
+            - sim_params, dict
+            - codex, dict
+            - truth_params, tuple
+            - truth_rmswfe, float
+            - zernike_norm, bool
+            - result_final, tuple
+            - result_iter, list
+            - cost_final, float
+            - cost_iter, list
+            - time, float
 
     """
     # declare some state for this run as global variables to speed up access in multiprocess pool
@@ -157,7 +155,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         'diffraction': diffraction,
     }
     pool = Pool(processes=os.cpu_count() - 1, initializer=prepare_globals, initargs=[_globals])
-    prepare_globals({**_globals, **{'pool': pool}})
+    prepare_globals({**_globals, 'pool': pool})
     optimizer_function = optfcn
     parameter_vectors = []
 
@@ -186,7 +184,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         result.x_iter = parameter_vectors
         result.fun_iter = cost_by_iter
         result.time = t_end - t_start
-        return result
+        return prepare_document(setup_parameters, decoder_ring, (0, 0.25, 0, 0), 0, False, result)
     finally:
         pool.close()
         pool.join()
