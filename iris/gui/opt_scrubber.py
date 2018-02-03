@@ -32,12 +32,17 @@ from iris.core import config_codex_params_to_pupil  # noqa
 root = Path(__file__).parent / '..' / '..' / '..' / 'simulations'
 
 truth_data = root / 'truth_df.csv'
+truth_wvfront = root / 'truth_wvfront.pkl'
 sim_cfg = root / 'config.pkl'
 sim_result = root / 'opt_result.pkl'
 
 if True:
     # load truth data
     df = pd.read_csv(truth_data)
+
+    # load truth wavefront
+    with open(truth_wvfront, 'rb') as fid:
+        true_wvfront = pickle.load(fid)
 
     # load configuration
     with open(sim_cfg, 'rb') as fid:
@@ -48,6 +53,7 @@ if True:
         opt_res = pickle.load(fid)
 
     # compute some metadata
+    epd = cfg['efl'] / cfg['fno']
     nit = len(opt_res['result_iter'])
     focus_um = defocus_to_image_displacement(cfg['focus_range_waves'], cfg['fno'], cfg['wavelength'])
 
@@ -82,10 +88,14 @@ def populate_cache(iteration):
         iteration to cache data for
 
     """
+    # create the focused pupil and data array
     coefs, codex = opt_res['result_iter'][iteration], opt_res['codex']
     focus_pupil = config_codex_params_to_pupil(cfg, codex, coefs)
     data = thrufocus_mtf_from_wavefront(focus_pupil, cfg)
     arr = df_to_mtf_array(data, 'Tan')
+
+    # store them in the cache
+    CACHE[iteration]['wvfront'] = focus_pupil.phase
     CACHE[iteration]['mtfarr'] = arr
     return arr
 
@@ -119,7 +129,7 @@ class App(QMainWindow):
         # set size and title
         self.left = 20
         self.top = 60
-        self.width = 640
+        self.width = 1200
         self.height = 800
         self.title = 'Optimization Explorer'
         self.setWindowTitle(self.title)
@@ -155,12 +165,12 @@ class App(QMainWindow):
 
         # draw the first iteration image
         imdat = populate_cache(0)
-        self.iter_im = self.citer_ax.imshow(imdat,
-                                            extent=self.dat_ext,
-                                            aspect='auto',
-                                            origin='lower',
-                                            cmap='inferno',
-                                            vmin=0, vmax=1)
+        self.iter_dat_im = self.citer_ax.imshow(imdat,
+                                                extent=self.dat_ext,
+                                                aspect='auto',
+                                                origin='lower',
+                                                cmap='inferno',
+                                                vmin=0, vmax=1)
 
         # draw the colorbar
         self.opt_fig.tight_layout()
@@ -168,6 +178,36 @@ class App(QMainWindow):
         cbax = self.opt_fig.add_axes([.85, 0.05, .05, .9])
         self.cb = self.opt_fig.colorbar(truth_im, cax=cbax)
         cbax.set(ylabel='MTF [Rel. 1.0]')
+
+        # create another figure for the wavefront plots
+        self.pup_ext = [-epd, epd, -epd, epd]
+        self.wvfront_canvas = FigureCanvas(plt.figure())
+        self.wave_fig = self.wvfront_canvas.figure
+        self.true_wv_ax, self.citer_wv_ax = self.wave_fig.subplots(nrows=2)
+
+        # draw the truth wavefront
+        truth_im = self.true_wv_ax.imshow(true_wvfront.phase,
+                                          extent=self.pup_ext,
+                                          origin='lower',
+                                          cmap='RdYlBu')
+        self.true_wv_ax.set(ylabel=r'Pupil $\eta$ [mm]', title='Truth')
+        self.citer_wv_ax.set(xlabel=r'Pupil $\xi$ [mm]', title='Current Iteration')
+
+        # draw the first iteration image
+        imdat = CACHE[0]['wvfront']
+        self.iter_wv_im = self.citer_wv_ax.imshow(imdat,
+                                                  extent=self.pup_ext,
+                                                  origin='lower',
+                                                  cmap='RdYlBu')
+
+        # make room and draw the colorbar
+        self.wave_fig.tight_layout()
+        self.wave_fig.subplots_adjust(left=0.3)
+        cbax = self.wave_fig.add_axes([.175, 0.05, .05, .9])
+        self.cb = self.wave_fig.colorbar(truth_im, cax=cbax)
+        cbax.set(ylabel=r'OPD [$\lambda$]')
+        cbax.yaxis.set_ticks_position('left')
+        cbax.yaxis.set_label_position('left')
 
         # add a label for the slider
         self.slider_value_label = QLabel('00')
@@ -184,6 +224,7 @@ class App(QMainWindow):
 
         # do the initial draw
         self.plot_layout.addWidget(self.opt_data_canvas)
+        self.plot_layout.addWidget(self.wvfront_canvas)
 
         self.slider_layout.addWidget(self.slider_value_label)
         self.slider_layout.addWidget(self.iteration_slider)
@@ -202,8 +243,10 @@ class App(QMainWindow):
         else:
             imdat = populate_cache(iteration)
 
-        self.iter_im.set_data(imdat)
-        self.opt_fig.canvas.draw()
+        self.iter_dat_im.set_data(imdat)
+        self.iter_wv_im.set_data(CACHE[iteration]['wvfront'])
+        self.opt_fig.canvas.draw_idle()
+        self.wave_fig.canvas.draw_idle()
 
 
 if __name__ == '__main__':
