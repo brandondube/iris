@@ -4,6 +4,30 @@ from prysm import FringeZernike, MTF
 from prysm.mtf_utils import mtf_ts_extractor
 
 
+def config_codex_params_to_pupil(config, codex, params):
+    """Convert a config dictionary, codex dictionary, and parameter vector to a pupil.
+
+    Parameters
+    ----------
+    config : `dict`
+        dictionary with keys efl, fno, wavelength, samples
+    codex : `dict`
+        dict with integer, string key value pairs, e.g. {0: 'Z1', 1: 'Z9'}
+    params : iterable
+        sequence of optimization parameters
+
+    Returns
+    -------
+    `prysm.Pupil`
+        a pupil object
+
+    """
+    s = config
+    efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
+    pupil_pass_zernikes = {key: value for (key, value) in zip(codex.values(), params)}
+    return FringeZernike(**pupil_pass_zernikes, base=1, epd=efl / fno, wavelength=wavelength, samples=samples)
+
+
 def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
     """Cost function that compares a measured or simulated T/S MTF to a simulated one.
 
@@ -98,11 +122,7 @@ def optfcn(wavefrontcoefs):
     """
     # generate a "base pupil" with some aberration content
     global setup_parameters, decoder_ring, pool, t_true, s_true, defocus_pupils
-    s = setup_parameters
-    efl, fno, wavelength, samples = s['efl'], s['fno'], s['wavelength'], s['samples']
-    pupil_pass_zernikes = {key: value for (key, value) in zip(decoder_ring.values(), wavefrontcoefs)}
-    pupil = FringeZernike(**pupil_pass_zernikes, base=1,
-                          epd=efl / fno, wavelength=wavelength, samples=samples)
+    pupil = config_codex_params_to_pupil(setup_parameters, decoder_ring, wavefrontcoefs)
 
     # for each focus plane, compute the cost function
     if pool is not None:
