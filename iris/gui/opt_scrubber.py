@@ -7,8 +7,8 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-import matplotlib
-matplotlib.use('Qt5agg')
+import matplotlib as mpl
+mpl.use('Qt5agg')
 
 from PyQt5.QtCore import Qt  # noqa
 from PyQt5.QtWidgets import (  # noqa
@@ -22,6 +22,7 @@ from PyQt5.QtWidgets import (  # noqa
 )
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # noqa
+from matplotlib.ticker import ScalarFormatter
 from matplotlib import pyplot as plt  # noqa
 
 from prysm.thinlens import defocus_to_image_displacement  # noqa
@@ -36,26 +37,26 @@ truth_wvfront = root / 'truth_wvfront.pkl'
 sim_cfg = root / 'config.pkl'
 sim_result = root / 'opt_result.pkl'
 
-if True:
-    # load truth data
-    df = pd.read_csv(truth_data)
 
-    # load truth wavefront
-    with open(truth_wvfront, 'rb') as fid:
-        true_wvfront = pickle.load(fid)
+# load truth data
+df = pd.read_csv(truth_data)
 
-    # load configuration
-    with open(sim_cfg, 'rb') as fid:
-        cfg = pickle.load(fid)
+# load truth wavefront
+with open(truth_wvfront, 'rb') as fid:
+    true_wvfront = pickle.load(fid)
 
-    # load optimization history
-    with open(sim_result, 'rb') as fid:
-        opt_res = pickle.load(fid)
+# load configuration
+with open(sim_cfg, 'rb') as fid:
+    cfg = pickle.load(fid)
 
-    # compute some metadata
-    epd = cfg['efl'] / cfg['fno']
-    nit = len(opt_res['result_iter'])
-    focus_um = defocus_to_image_displacement(cfg['focus_range_waves'], cfg['fno'], cfg['wavelength'])
+# load optimization history
+with open(sim_result, 'rb') as fid:
+    opt_res = pickle.load(fid)
+
+# compute some metadata
+epd = cfg['efl'] / cfg['fno']
+nit = len(opt_res['result_iter'])
+focus_um = defocus_to_image_displacement(cfg['focus_range_waves'], cfg['fno'], cfg['wavelength'])
 
 CACHE = defaultdict(dict)
 
@@ -68,7 +69,7 @@ def df_to_mtf_array(df, azimuth='Tan'):
     df : `pandas.DataFrame`
         a dataframe with a column for azimuth, focus, frequency, and MTF
     azimuth : `str`, optional, {'Tan', 'Sag'}
-        which azimuth to grab;
+        which azimuth to grab
 
     Returns
     -------
@@ -99,7 +100,7 @@ def populate_cache(iteration):
     arr = df_to_mtf_array(data, 'Tan')
 
     # store them in the cache
-    CACHE[iteration][WVFRONTKEY] = focus_pupil.phase.copy()
+    CACHE[iteration][WVFRONTKEY] = focus_pupil.phase
     CACHE[iteration][OPTDATAKEY] = arr
     return arr
 
@@ -127,13 +128,12 @@ class App(QMainWindow):
 
     def __init__(self):
         """Create a new Optimization Result Scrubber."""
-        # initialize the window
         super(App, self).__init__()
 
         # set size and title
         self.left = 20
         self.top = 60
-        self.width = 1200
+        self.width = 1600
         self.height = 800
         self.title = 'Optimization Explorer'
         self.setWindowTitle(self.title)
@@ -151,12 +151,12 @@ class App(QMainWindow):
 
         self.init_optdata_plot()
         self.init_wavefront_plot()
+        self.init_costfunction_plot()
         self.init_slider()
         self.show()
 
     def init_optdata_plot(self):
         """Initialize the optimization data plot."""
-        # create a figure and two axes used to draw the truth data and the current iteration data
         self.opt_data_canvas = FigureCanvas(plt.figure())
         self.opt_fig = self.opt_data_canvas.figure
         self.truth_ax, self.citer_ax = self.opt_fig.subplots(nrows=2)
@@ -194,17 +194,19 @@ class App(QMainWindow):
 
     def init_wavefront_plot(self):
         """Initialize the wavefront plots."""
-        # create another figure for the wavefront plots
         self.pup_ext = [-epd, epd, -epd, epd]
         self.wvfront_canvas = FigureCanvas(plt.figure())
         self.wave_fig = self.wvfront_canvas.figure
         self.true_wv_ax, self.citer_wv_ax = self.wave_fig.subplots(nrows=2)
 
         # draw the truth wavefront
+        nani = true_wvfront.phase[np.isfinite(true_wvfront.phase)]
+        mx, mn = nani.max(), nani.min()
         truth_im = self.true_wv_ax.imshow(true_wvfront.phase,
                                           extent=self.pup_ext,
                                           origin='lower',
-                                          cmap='RdYlBu')
+                                          cmap='RdYlBu',
+                                          vmin=mn, vmax=mx)
         self.true_wv_ax.set(ylabel=r'Pupil $\eta$ [mm]', title='Truth')
         self.citer_wv_ax.set(xlabel=r'Pupil $\xi$ [mm]', title='Current Iteration')
 
@@ -213,11 +215,12 @@ class App(QMainWindow):
         self.iter_wv_im = self.citer_wv_ax.imshow(imdat,
                                                   extent=self.pup_ext,
                                                   origin='lower',
-                                                  cmap='RdYlBu')
+                                                  cmap='RdYlBu',
+                                                  vmin=mn, vmax=mx)
 
         # make room and draw the colorbar
         self.wave_fig.tight_layout()
-        self.wave_fig.subplots_adjust(left=0.3)
+        self.wave_fig.subplots_adjust(left=0.25)
         cbax = self.wave_fig.add_axes([.175, 0.05, .05, .9])
         self.cb = self.wave_fig.colorbar(truth_im, cax=cbax)
         cbax.set(ylabel=r'OPD [$\lambda$]')
@@ -225,6 +228,24 @@ class App(QMainWindow):
         cbax.yaxis.set_label_position('left')
 
         self.plot_layout.addWidget(self.wvfront_canvas)
+
+    def init_costfunction_plot(self):
+        """Initialize the plot of the cost function and residual RMS WFE vs iteration."""
+        with mpl.style.context('ggplot'):
+            self.cost_canvas = FigureCanvas(plt.figure())
+            self.cost_fig = self.cost_canvas.figure
+            self.cost_axis, self.rmswfe_axis = self.cost_fig.subplots(nrows=2, sharex=True)
+            iters = range(nit)
+
+            self.cost_line, = self.cost_axis.plot(iters, opt_res['cost_iter'], lw=3)
+            self.cost_highlight, = self.cost_axis.plot(0, opt_res['cost_iter'][0], '.', ms=15)
+
+            self.cost_axis.set(ylabel='Cost Function Value [a.u.]')
+            self.rmswfe_axis.set(xlabel='Iteration', ylabel=r'Residual RMS WFE [$\lambda$]')
+            self.rmswfe_axis.xaxis.set_major_formatter(ScalarFormatter())
+            self.cost_fig.tight_layout()
+
+        self.plot_layout.addWidget(self.cost_canvas)
 
     def init_slider(self):
         """Create and initialize the slider."""
@@ -252,6 +273,7 @@ class App(QMainWindow):
         self.update_slidertext()
         self.update_optdata_plot()
         self.update_wavefront_plot()
+        self.update_cost_plot()
 
     def update_slidertext(self):
         """Update the slider text."""
@@ -266,6 +288,12 @@ class App(QMainWindow):
         """Update the wavefront data plot."""
         self.iter_wv_im.set_data(CACHE[self.iteration][WVFRONTKEY])
         self.wave_fig.canvas.draw_idle()
+
+    def update_cost_plot(self):
+        """Update the cost function plot."""
+        self.cost_highlight.set_xdata(self.iteration)
+        self.cost_highlight.set_ydata(opt_res['cost_iter'][self.iteration])
+        self.cost_fig.canvas.draw_idle()
 
 
 if __name__ == '__main__':
