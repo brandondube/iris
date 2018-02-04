@@ -22,7 +22,7 @@ from PyQt5.QtWidgets import (  # noqa
 )
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # noqa
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import ScalarFormatter  # noqa
 from matplotlib import pyplot as plt  # noqa
 
 from prysm.thinlens import defocus_to_image_displacement  # noqa
