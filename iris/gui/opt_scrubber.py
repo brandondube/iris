@@ -59,6 +59,7 @@ nit = len(opt_res['result_iter'])
 focus_um = defocus_to_image_displacement(cfg['focus_range_waves'], cfg['fno'], cfg['wavelength'])
 
 CACHE = defaultdict(dict)
+GAMMA = 1
 
 
 def df_to_mtf_array(df, azimuth='Tan'):
@@ -170,6 +171,7 @@ class App(QMainWindow):
                                         aspect='auto',
                                         origin='lower',
                                         cmap='inferno',
+                                        norm=mpl.colors.PowerNorm(1 / GAMMA),
                                         vmin=0, vmax=1)
         self.truth_ax.set(ylabel=r'Focus [$\mu m$]', title='Truth')
         self.citer_ax.set(xlabel='Spatial Frequency [cy/mm]', title='Current Iteration')
@@ -181,6 +183,7 @@ class App(QMainWindow):
                                                 aspect='auto',
                                                 origin='lower',
                                                 cmap='inferno',
+                                                norm=mpl.colors.PowerNorm(1 / GAMMA),
                                                 vmin=0, vmax=1)
 
         # draw the colorbar
@@ -188,7 +191,11 @@ class App(QMainWindow):
         self.opt_fig.subplots_adjust(right=0.8)
         cbax = self.opt_fig.add_axes([.85, 0.05, .05, .9])
         self.cb = self.opt_fig.colorbar(truth_im, cax=cbax)
-        cbax.set(ylabel='MTF [Rel. 1.0]')
+        if GAMMA != 1.0:
+            raised_txt = f', raised to 1/{GAMMA} power'
+        else:
+            raised_txt = ''
+        cbax.set(ylabel=f'MTF [Rel. 1.0{raised_txt}]')
 
         self.plot_layout.addWidget(self.opt_data_canvas)
 
