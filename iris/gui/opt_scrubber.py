@@ -59,7 +59,7 @@ nit = len(opt_res['result_iter'])
 focus_um = defocus_to_image_displacement(cfg['focus_range_waves'], cfg['fno'], cfg['wavelength'])
 
 CACHE = defaultdict(dict)
-GAMMA = 1
+GAMMA = 1.5
 
 
 def df_to_mtf_array(df, azimuth='Tan'):
