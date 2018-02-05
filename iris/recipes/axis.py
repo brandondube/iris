@@ -92,7 +92,7 @@ def grab_axial_data(setup_parameters, truth_dataframe):
     return wvfront_defocus, ax_t, ax_s
 
 
-def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0)):
+def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0), parallel=False):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
@@ -106,6 +106,8 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
         numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
     guess : iterable, optional
         guess coefficients for the wavefront
+    parallel : `bool`, optional
+        whether to run optimization in parallel.  Defaults to true
 
     Returns
     -------
@@ -149,7 +151,10 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
         'defocus_pupils': defocus_pupils,
         'diffraction': diffraction,
     }
-    pool = Pool(processes=os.cpu_count() - 1, initializer=prepare_globals, initargs=[_globals])
+    if parallel is True:
+        pool = Pool(processes=os.cpu_count() - 1, initializer=prepare_globals, initargs=[_globals])
+    else:
+        pool = None
     prepare_globals({**_globals, 'pool': pool})
     optimizer_function = optfcn
     parameter_vectors = []
@@ -181,5 +186,6 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
         result.time = t_end - t_start
         return result
     finally:
-        pool.close()
-        pool.join()
+        if pool is not None:
+            pool.close()
+            pool.join()
