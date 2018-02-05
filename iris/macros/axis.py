@@ -2,11 +2,11 @@
 
 import numpy as np
 
-from prysm import FringeZernike
 from prysm.macros import thrufocus_mtf_from_wavefront
 
 from iris.utilities import make_focus_range_realistic_number_of_microns, prepare_document
 from iris.recipes import sph_from_focusdiverse_axial_mtf
+from iris.core import config_codex_params_to_pupil
 
 
 def run_azimuthalzero_simulation(truth=(0, 0.2, 0, 0), guess=(0, 0, 0, 0)):
@@ -41,16 +41,14 @@ def run_azimuthalzero_simulation(truth=(0, 0.2, 0, 0), guess=(0, 0, 0, 0)):
         'freq_step': 10,
     }
     cfg = make_focus_range_realistic_number_of_microns(sim_params, 5)
-    efl, fno, wavelength, samples = cfg['efl'], cfg['fno'], cfg['wavelength'], cfg['samples']
-    pupil = FringeZernike(Z9=0.2, epd=efl / fno, wavelength=wavelength, samples=samples)
-    truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
-
     decoder_ring = {
         0: 'Z4',
         1: 'Z9',
         2: 'Z16',
         3: 'Z25',
     }
+    pupil = config_codex_params_to_pupil(cfg, decoder_ring, truth)
+    truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
 
     sim_result = sph_from_focusdiverse_axial_mtf(cfg, truth_df, decoder_ring, guess)
     return prepare_document(
