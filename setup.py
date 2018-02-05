@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='iris',
-    version='0.0.10',
+    version='0.0.11',
     description='A python-based wavefront sensing module',
     long_description='',
     license='Copyright (C) 2017-2018 Brandon Dube, all rights reserved',
