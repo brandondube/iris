@@ -13,7 +13,7 @@ from prysm.otf import diffraction_limited_mtf
 from prysm.thinlens import image_displacement_to_defocus
 
 from iris.core import optfcn, prepare_globals
-from iris.utilities import parse_cost_by_iter_lbfgsb, prepare_document
+from iris.utilities import parse_cost_by_iter_lbfgsb
 from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
 
 
@@ -92,7 +92,7 @@ def grab_axial_data(setup_parameters, truth_dataframe):
     return wvfront_defocus, ax_t, ax_s
 
 
-def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0, 0, 0)):
+def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0)):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
@@ -101,6 +101,9 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         dictionary with keys efl, fno, wavelength, samples, focus_planes, focus_range_waves, freqs, freq_step
     truth_dataframe : `pandas.DataFrame`
         a dataframe containing truth values
+    codex : dict
+        dictionary of key, value pairs where keys are ints and values are strings.  Maps parameter
+        numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
     guess : iterable, optional
         guess coefficients for the wavefront
 
@@ -121,7 +124,6 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
 
     """
     # declare some state for this run as global variables to speed up access in multiprocess pool
-    global t_true, s_true, setup_parameters, decoder_ring, defocus_pupils, diffraction, pool
     setup_parameters = sys_parameters
     (focus_diversity,
      ax_t, ax_s) = grab_axial_data(setup_parameters, truth_dataframe)
@@ -139,18 +141,11 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
     for focus in focus_diversity:
         defocus_pupils.append(Seidel(W020=focus, epd=efl / fno, wavelength=wvl, samples=samples))
 
-    decoder_ring = {
-        0: 'Z4',
-        1: 'Z9',
-        2: 'Z16',
-        3: 'Z25',
-    }
-
     _globals = {
         't_true': t_true,
         's_true': s_true,
         'setup_parameters': setup_parameters,
-        'decoder_ring': decoder_ring,
+        'decoder_ring': codex,
         'defocus_pupils': defocus_pupils,
         'diffraction': diffraction,
     }
@@ -184,7 +179,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, guess=(0, 0
         result.x_iter = parameter_vectors
         result.fun_iter = cost_by_iter
         result.time = t_end - t_start
-        return prepare_document(setup_parameters, decoder_ring, (0, 0.25, 0, 0), 0, False, result)
+        return result
     finally:
         pool.close()
         pool.join()
