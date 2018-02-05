@@ -5,7 +5,7 @@ import numpy as np
 from prysm import FringeZernike
 from prysm.macros import thrufocus_mtf_from_wavefront
 
-from iris.util import make_focus_range_realistic_number_of_microns, prepare_document
+from iris.utilities import make_focus_range_realistic_number_of_microns, prepare_document
 from iris.recipes import sph_from_focusdiverse_axial_mtf
 
 
