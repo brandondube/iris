@@ -9,7 +9,7 @@ from iris.recipes import sph_from_focusdiverse_axial_mtf
 from iris.core import config_codex_params_to_pupil
 
 
-def run_azimuthalzero_simulation(truth=(0, 0.2, 0, 0), guess=(0, 0, 0, 0)):
+def run_azimuthalzero_simulation(truth=(0, 0.2, 0, 0), guess=(0, 0.0, 0, 0)):
     """Run a complete simulation generating and retrieving azimuthal order zero terms.
 
     Parameters
@@ -51,10 +51,17 @@ def run_azimuthalzero_simulation(truth=(0, 0.2, 0, 0), guess=(0, 0, 0, 0)):
     truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
 
     sim_result = sph_from_focusdiverse_axial_mtf(cfg, truth_df, decoder_ring, guess)
+
+    residuals = []
+    for coefs in sim_result.x_iter:
+        p2 = config_codex_params_to_pupil(cfg, decoder_ring, coefs)
+        residuals.append((pupil - p2).rms)
+
     return prepare_document(
         sim_params=cfg,
         codex=decoder_ring,
         truth_params=truth,
         truth_rmswfe=pupil.rms,
+        rmswfe_iter=residuals,
         normed=False,
         optimization_result=sim_result)

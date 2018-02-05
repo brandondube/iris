@@ -84,7 +84,7 @@ def parse_cost_by_iter_lbfgsb(string):
     return [float(s.replace('D', 'E')) for s in fortran_values]
 
 
-def prepare_document(sim_params, codex, truth_params, truth_rmswfe, normed, optimization_result):
+def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
         """Prepare a document (dict) for insertion into the results database.
 
         Parameters
@@ -98,6 +98,8 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, normed, opti
             truth parameters
         truth_rmswfe: `float`
             RMS WFE of the truth
+        rmswfe_iter : iterable
+            rms wavefront error for each iteration
         normed : `bool`
             if the coefficients should be made unit RMS value
         optimization_result : object
@@ -116,6 +118,7 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, normed, opti
                 - result_iter, list
                 - cost_final, float
                 - cost_iter, list
+                - rmswfe_iter, list
                 - time, float
 
         """
@@ -130,6 +133,7 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, normed, opti
             'result_iter': xiter,
             'cost_final': f,
             'cost_iter': fiter,
+            'rmswfe_iter': rmswfe_iter,
             'time': t,
         }
 
