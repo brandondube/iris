@@ -34,7 +34,7 @@ def single_solve_triple(result_document, log=False, fig=None, axs=None):
 
     # pull the relevant data
     rd = result_document
-    params, cost, rmswfe = rd['x_iter'], rd['fun_iter'], rd['rmswfe_iter']
+    params, cost, rmswfe = rd['result_iter'], rd['cost_iter'], rd['rmswfe_iter']
     iters = list(range(len(params)))
     params = np.asarray(params)
     p_shape = params.shape
@@ -43,8 +43,8 @@ def single_solve_triple(result_document, log=False, fig=None, axs=None):
     fig, axs = plt.subplots(ncols=3, sharex=True, figsize=(12, 4))
 
     # get the parameter names
-    names = list(result_document['retrieved_zernike'].keys())
-    truths = list(result_document['truth_zernike'].values())
+    names = list(rd['codex'].values())
+    truths = rd['truth_params']
     for i, name, truth in zip(range(p_shape[1]), names, truths):
         line, = axs[0].plot(iters, params[:, i], label=f'{name} : {truth}')
         axs[0].scatter(iters[-1], truth, c=line.get_color(), linewidths=3)
