@@ -8,8 +8,6 @@ import numpy as np
 
 from scipy.optimize import minimize
 
-from prysm import Seidel
-from prysm.otf import diffraction_limited_mtf
 from prysm.thinlens import image_displacement_to_defocus
 
 from iris.core import optfcn, prepare_globals
@@ -78,7 +76,7 @@ def grab_axial_data(setup_parameters, truth_dataframe):
     s = setup_parameters
     axial_mtf_data = truth_dataframe[truth_dataframe.Field == 0]
     focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
-    wvfront_defocus = image_displacement_to_defocus(focuspos, s['fno'], s['wavelength'])
+    wvfront_defocus = image_displacement_to_defocus(focuspos, s.fno, s.wvl, s.focus_zernike, s.focus_normed)
     ax_t = []
     ax_s = []
     for pos in focuspos:
@@ -134,22 +132,11 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
     # is the focal plane and the second frequency.
     t_true, s_true = list(ax_t), list(ax_s)
 
-    # precompute the defocus wavefronts to accelerate solving
-    s = setup_parameters
-
-    efl, fno, wvl, freqs, samples = s['efl'], s['fno'], s['wavelength'], s['freqs'], s['samples']
-    diffraction = diffraction_limited_mtf(fno, wvl, frequencies=freqs)
-    defocus_pupils = []
-    for focus in focus_diversity:
-        defocus_pupils.append(Seidel(W020=focus, epd=efl / fno, wavelength=wvl, samples=samples))
-
     _globals = {
         't_true': t_true,
         's_true': s_true,
         'setup_parameters': setup_parameters,
         'decoder_ring': codex,
-        'defocus_pupils': defocus_pupils,
-        'diffraction': diffraction,
     }
     if parallel is True:
         pool = Pool(processes=os.cpu_count() - 1, initializer=prepare_globals, initargs=[_globals])
@@ -173,8 +160,9 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
                 method='L-BFGS-B',
                 options={
                     'disp': True,
-                    'gtol': 1e-10,
-                    'ftol': 1e-12,
+                    'gtol': 1e-5,
+                    'ftol': 1e-5,
+
                 },
                 callback=callback)
 
