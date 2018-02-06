@@ -6,6 +6,7 @@ from operator import itemgetter
 import numpy as np
 
 from prysm.thinlens import image_displacement_to_defocus, defocus_to_image_displacement
+from prysm.macros import SimulationConfig
 
 
 def round_to_int(value, integer):
@@ -27,35 +28,35 @@ def round_to_int(value, integer):
     return integer * round(float(value) / integer)
 
 
-def make_focus_range_realistic_number_of_microns(config, round_focus_to=5):
+def make_focus_range_realistic_number_of_microns(cfg, round_focus_to=5):
     """Create a modified config dictionary that has a focus range which is realistic for an MTF bench.
 
     Parameters
     ----------
-    config : `dict`
+    config : `prysm.macros.SimulationConfig`
         dict with keys focus_range_waves, fno, wavelength
     round_focus_to : `int`, optional
         integer number of microns to round focus to
 
     Returns
     -------
-    `dict`
-        modified dic that has same keys as input dict
+    `prysm.macros.SimulationConfig`
+        modified SimulationConfig with focus range updaterounded to the specified number of microns
 
     """
-    d = config
-    focusdiv_wvs = d['focus_range_waves']
-    focusdiv_um = round_to_int(defocus_to_image_displacement(
-        focusdiv_wvs,
-        d['fno'],
-        d['wavelength']), round_focus_to)  # round to nearest x microns
-    # copy and update the focus diversity in the config dict
-    cfg = config.copy()
-    cfg['focus_range_waves'] = image_displacement_to_defocus(
-        focusdiv_um,
-        d['fno'],
-        d['wavelength'])
-    return cfg
+    # get the amount of defocus diversity in microns
+    focus_wvs = cfg.focus_range_waves
+    focus_um = defocus_to_image_displacement(focus_wvs, cfg.fno, cfg.wvl, cfg.focus_zernike, cfg.focus_normed)
+
+    # round the focus range in microns and map it back into the given units
+    focus_round = round_to_int(focus_um, round_focus_to)
+    focus_round_wvs = image_displacement_to_defocus(focus_round, cfg.fno, cfg.wvl, cfg.focus_zernike, cfg.focus_normed)
+
+    # unpack the namedtuple to a dict, modify the focus_range_waves field, and convert back to a
+    # namedtuple; return the new instance.
+    cfg_dict = cfg._asdict()
+    cfg_dict['focus_range_waves'] = focus_round_wvs
+    return SimulationConfig(**cfg_dict)
 
 
 def parse_cost_by_iter_lbfgsb(string):
