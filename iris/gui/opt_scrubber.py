@@ -26,16 +26,16 @@ from matplotlib.ticker import ScalarFormatter  # noqa
 from matplotlib import pyplot as plt  # noqa
 
 from prysm.thinlens import defocus_to_image_displacement  # noqa
-from prysm.macros import thrufocus_mtf_from_wavefront  # noqa
+from prysm.macros import thrufocus_mtf_from_wavefront_array  # noqa
 
 from iris.core import config_codex_params_to_pupil  # noqa
 
 root = Path(__file__).parent / '..' / '..' / '..' / 'simulations'
 
 truth_data = root / 'truth_df.csv'
-truth_wvfront = root / 'truth_wvfront.pkl'
+truth_wvfront = root / 'truth_wavefront.pkl'
 sim_cfg = root / 'config.pkl'
-sim_result = root / 'opt_result.pkl'
+sim_result = root / 'optimization_result.pkl'
 
 
 # load truth data
@@ -54,9 +54,9 @@ with open(sim_result, 'rb') as fid:
     opt_res = pickle.load(fid)
 
 # compute some metadata
-epd = cfg['efl'] / cfg['fno']
+epd = cfg.efl / cfg.fno
 nit = len(opt_res['result_iter'])
-focus_um = defocus_to_image_displacement(cfg['focus_range_waves'], cfg['fno'], cfg['wavelength'])
+focus_um = defocus_to_image_displacement(cfg.focus_range_waves, cfg.fno, cfg.wvl, cfg.focus_zernike, cfg.focus_normed)
 
 CACHE = defaultdict(dict)
 GAMMA = 1.5
@@ -78,7 +78,7 @@ def df_to_mtf_array(df, azimuth='Tan'):
         2d ndarray
 
     """
-    return df[df.Azimuth == azimuth].as_matrix(columns=['MTF']).reshape(cfg['focus_planes'], len(cfg['freqs']))
+    return df[df.Azimuth == azimuth].as_matrix(columns=['MTF']).reshape(cfg.focus_planes, len(cfg.freqs))
 
 
 OPTDATAKEY = 'mtfarr'
@@ -97,13 +97,12 @@ def populate_cache(iteration):
     # create the focused pupil and data array
     coefs, codex = opt_res['result_iter'][iteration], opt_res['codex']
     focus_pupil = config_codex_params_to_pupil(cfg, codex, coefs)
-    data = thrufocus_mtf_from_wavefront(focus_pupil, cfg)
-    arr = df_to_mtf_array(data, 'Tan')
+    data_t, data_s = thrufocus_mtf_from_wavefront_array(focus_pupil, cfg)
 
     # store them in the cache
     CACHE[iteration][WVFRONTKEY] = focus_pupil.phase
-    CACHE[iteration][OPTDATAKEY] = arr
-    return arr
+    CACHE[iteration][OPTDATAKEY] = data_t
+    return data_t
 
 
 class App(QMainWindow):
@@ -164,7 +163,7 @@ class App(QMainWindow):
 
         # draw the truth image
         truth_dat = df_to_mtf_array(df, 'Tan')
-        self.dat_ext = [0, cfg['freqs'][-1], -focus_um, focus_um]
+        self.dat_ext = [0, cfg.freqs[-1], -focus_um, focus_um]
 
         truth_im = self.truth_ax.imshow(truth_dat,
                                         extent=self.dat_ext,
@@ -189,7 +188,7 @@ class App(QMainWindow):
         # draw the colorbar
         self.opt_fig.tight_layout()
         self.opt_fig.subplots_adjust(right=0.8)
-        cbax = self.opt_fig.add_axes([.85, 0.05, .05, .9])
+        cbax = self.opt_fig.add_axes([.8125, 0.05, .05, .9])
         self.cb = self.opt_fig.colorbar(truth_im, cax=cbax)
         if GAMMA != 1.0:
             raised_txt = f', raised to 1/{GAMMA} power'
@@ -244,10 +243,12 @@ class App(QMainWindow):
             self.cost_axis, self.rmswfe_axis = self.cost_fig.subplots(nrows=2, sharex=True)
             iters = range(nit)
 
-            self.cost_line, = self.cost_axis.plot(iters, opt_res['cost_iter'], lw=3)
+            self.cost_axis.plot(iters, opt_res['cost_iter'], lw=3)
             self.cost_highlight, = self.cost_axis.plot(0, opt_res['cost_iter'][0], '.', ms=15)
-
             self.cost_axis.set(ylabel='Cost Function Value [a.u.]')
+
+            self.rmswfe_axis.plot(iters, opt_res['rmswfe_iter'], lw=3)
+            self.rmswfe_highlight, = self.rmswfe_axis.plot(0, opt_res['rmswfe_iter'][0], '.', ms=15)
             self.rmswfe_axis.set(xlabel='Iteration', ylabel=r'Residual RMS WFE [$\lambda$]')
             self.rmswfe_axis.xaxis.set_major_formatter(ScalarFormatter())
             self.cost_fig.tight_layout()
@@ -282,6 +283,11 @@ class App(QMainWindow):
         self.update_wavefront_plot()
         self.update_cost_plot()
 
+        arr_true = df_to_mtf_array(df, 'Tan')
+        arr_00 = CACHE[self.iteration]['mtfarr']
+        costfcn = ((arr_true - arr_00) ** 2).sum()
+        print(costfcn)
+
     def update_slidertext(self):
         """Update the slider text."""
         self.slider_value_label.setText(f'{self.iteration:02d}')
@@ -300,6 +306,8 @@ class App(QMainWindow):
         """Update the cost function plot."""
         self.cost_highlight.set_xdata(self.iteration)
         self.cost_highlight.set_ydata(opt_res['cost_iter'][self.iteration])
+        self.rmswfe_highlight.set_xdata(self.iteration)
+        self.rmswfe_highlight.set_ydata(opt_res['rmswfe_iter'][self.iteration])
         self.cost_fig.canvas.draw_idle()
 
 
