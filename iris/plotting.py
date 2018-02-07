@@ -51,7 +51,7 @@ def single_solve_triple(result_document, log=False, fig=None, axs=None):
 
     axs[0].legend()
     axs[0].set(xlabel='Iteration [-]',
-               ylabel=r'Zernike Weight [$\lambda$ 0P]',
+               ylabel=r'Zernike Weight [$\lambda$ RMS]',
                title='Parameters')
 
     axs[1].plot(iters, cost)
