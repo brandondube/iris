@@ -90,7 +90,7 @@ def grab_axial_data(setup_parameters, truth_dataframe):
     return wvfront_defocus, ax_t, ax_s
 
 
-def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0), parallel=False):
+def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0), parallel=True):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
@@ -135,6 +135,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
     _globals = {
         't_true': t_true,
         's_true': s_true,
+        'defocus': focus_diversity,
         'setup_parameters': setup_parameters,
         'decoder_ring': codex,
     }

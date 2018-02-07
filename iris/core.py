@@ -1,14 +1,11 @@
 """Core optimization routines for wavefront sensing."""
 from functools import partial
 
-import numpy as np
-
 from prysm import FringeZernike, MTF
 from prysm.mtf_utils import mtf_ts_extractor
-from prysm.macros import thrufocus_mtf_from_wavefront_array
 
 
-def config_codex_params_to_pupil(config, codex, params):
+def config_codex_params_to_pupil(config, codex, params, defocus=0):
     """Convert a config dictionary, codex dictionary, and parameter vector to a pupil.
 
     Parameters
@@ -19,6 +16,8 @@ def config_codex_params_to_pupil(config, codex, params):
         dict with integer, string key value pairs, e.g. {0: 'Z1', 1: 'Z9'}
     params : iterable
         sequence of optimization parameters
+    defocus : float, optional
+        amount of defocus applied in the same units as params
 
     Returns
     -------
@@ -28,6 +27,7 @@ def config_codex_params_to_pupil(config, codex, params):
     """
     s = config
     pupil_pass_zernikes = {key: value for (key, value) in zip(codex.values(), params)}
+    pupil_pass_zernikes['Z4'] += defocus
     return FringeZernike(**pupil_pass_zernikes,
                          base=1,
                          epd=s.efl / s.fno,
@@ -84,10 +84,10 @@ def average_mse_focusplanes(costfcn):
     average over focus planes.
 
     """
-    return sum(costfcn) / len(costfcn)  # * setup_parameters.freq_step
+    return sum(costfcn)  # / len(costfcn)  # * setup_parameters.freq_step
 
 
-def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
+def realize_focus_plane(params, t_true, s_true, defocus):
     """Compute the cost function for a single focal plane.
 
     Parameters
@@ -98,8 +98,8 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
         array of true MTF values
     s_true : `numpy.ndarray`
         array of true MTF values
-    defocus_wavefront : `prysm.Pupil`
-        a prysm Pupil object
+    defocus_wavefront : float
+        amount of defocus, in same units as params
 
     Returns
     -------
@@ -107,8 +107,8 @@ def realize_focus_plane(base_wavefront, t_true, s_true, defocus_wavefront):
         value of the cost function for this focus plane realization
 
     """
-    global setup_parameters
-    prop_wvfront = base_wavefront + defocus_wavefront
+    global setup_parameters, decoder_ring
+    prop_wvfront = config_codex_params_to_pupil(setup_parameters, decoder_ring, params, defocus)
     mtf = MTF.from_pupil(prop_wvfront, setup_parameters.efl)
     t, s = mtf_ts_extractor(mtf, setup_parameters.freqs)
     return mtf_cost_fcn(t_true, s_true, t, s)
@@ -129,23 +129,17 @@ def optfcn(wavefrontcoefs):
 
     """
     # generate a "base pupil" with some aberration content
-    global setup_parameters, decoder_ring, pool, t_true, s_true, defocus_pupils
-    t, s = np.asarray(t_true).reshape(21, 90), np.asarray(s_true).reshape(21, 90)
-    pupil = config_codex_params_to_pupil(setup_parameters, decoder_ring, wavefrontcoefs)
+    global setup_parameters, decoder_ring, pool, t_true, s_true, defocus
 
-    dat_t, dat_s = thrufocus_mtf_from_wavefront_array(pupil, setup_parameters)
-    diff_t = ((t - dat_t) ** 2).sum()
-    diff_s = ((s - dat_s) ** 2).sum()
+    if pool is not None:
+        rfp_mp = partial(realize_focus_plane, wavefrontcoefs)
+        costfcn = pool.starmap(rfp_mp, zip(t_true, s_true, defocus))
+    else:
+        costfcn = []
+        for t, s, defocus_ in zip(t_true, s_true, defocus):
+            costfcn.append(realize_focus_plane(wavefrontcoefs, t, s, defocus_))
 
-    # from matplotlib import pyplot as plt
-    # fig, axs = plt.subplots(ncols=2)
-    # axs[0].imshow(t, aspect='auto')
-    # axs[1].imshow(dat_t, aspect='auto')
-    # axs[0].set_title('true')
-    # axs[1].set_title('model')
-    # axs[1].set(xlabel=f'{diff_t + diff_s}')
-    # plt.show()
-    return diff_t + diff_s
+    return average_mse_focusplanes(costfcn)
 
 
 def prepare_globals(arg_dict):
