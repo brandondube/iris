@@ -1,6 +1,6 @@
 """Macros for performing simulations, etc."""
 from prysm.macros import thrufocus_mtf_from_wavefront, SimulationConfig
-from prysm.mathops import sqrt, floor
+from prysm.mathops import sqrt
 
 from iris.utilities import make_focus_range_realistic_number_of_microns, prepare_document
 from iris.recipes import sph_from_focusdiverse_axial_mtf
@@ -13,12 +13,13 @@ DEFAULT_CFG = SimulationConfig(
     fno=fno,
     wvl=lambda_,
     samples=128,
-    freqs=freqs,
+    freqs=range(extinction, 10),
     focus_range_waves=1 / 2 * sqrt(3),  # waves / Zernike/Hopkins / norm(Z4)
     focus_zernike=True,
     focus_normed=True,
     focus_planes=21)
-DEFAULT_CFG = make_focus_range_realistic_number_of_microns(cfg, 5)
+DEFAULT_CFG = make_focus_range_realistic_number_of_microns(DEFAULT_CFG, 5)
+
 
 def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None):
     """Run a complete simulation generating and retrieving azimuthal order zero terms.
