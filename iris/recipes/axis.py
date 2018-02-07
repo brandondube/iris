@@ -147,10 +147,10 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
     parameter_vectors = []
 
     def callback(x):
-        parameter_vectors.append(x)
+        parameter_vectors.append(x.copy())
 
     try:
-        parameter_vectors.insert(0, np.asarray(guess))
+        parameter_vectors.append(np.asarray(guess))
         t_start = time.perf_counter()
         # do the optimization and capture the per-iteration information from stdout
         with forcefully_redirect_stdout() as out:
@@ -160,9 +160,6 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
                 method='L-BFGS-B',
                 options={
                     'disp': True,
-                    'gtol': 1e-5,
-                    'ftol': 1e-5,
-
                 },
                 callback=callback)
 
