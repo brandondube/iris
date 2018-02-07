@@ -8,17 +8,17 @@ from iris.core import config_codex_params_to_pupil
 
 efl, fno, lambda_ = 50, 2, 0.55
 extinction = 1000 / (fno * lambda_)
-DEFAULT_CFG = SimulationConfig(
+DEFAULT_CONFIG = SimulationConfig(
     efl=efl,
     fno=fno,
     wvl=lambda_,
     samples=128,
-    freqs=range(floor(extinction), 10),
+    freqs=tuple(range(10, floor(extinction), 10)),
     focus_range_waves=1 / 2 * sqrt(3),  # waves / Zernike/Hopkins / norm(Z4)
     focus_zernike=True,
     focus_normed=True,
     focus_planes=21)
-DEFAULT_CFG = make_focus_range_realistic_number_of_microns(DEFAULT_CFG, 5)
+DEFAULT_CONFIG = make_focus_range_realistic_number_of_microns(DEFAULT_CONFIG, 5)
 
 
 def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None):
@@ -40,7 +40,7 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
 
     """
     if cfg is None:
-        cfg = DEFAULT_CFG
+        cfg = DEFAULT_CONFIG
 
     decoder_ring = {
         0: 'Z4',
