@@ -171,6 +171,7 @@ class App(QMainWindow):
                                         origin='lower',
                                         cmap='inferno',
                                         norm=mpl.colors.PowerNorm(1 / GAMMA),
+                                        interpolation='lanczos',
                                         vmin=0, vmax=1)
         self.truth_ax.set(ylabel=r'Focus [$\mu m$]', title='Truth')
         self.citer_ax.set(xlabel='Spatial Frequency [cy/mm]', title='Current Iteration')
@@ -182,6 +183,7 @@ class App(QMainWindow):
                                                 aspect='auto',
                                                 origin='lower',
                                                 cmap='inferno',
+                                                interpolation='lanczos',
                                                 norm=mpl.colors.PowerNorm(1 / GAMMA),
                                                 vmin=0, vmax=1)
 
@@ -212,6 +214,7 @@ class App(QMainWindow):
                                           extent=self.pup_ext,
                                           origin='lower',
                                           cmap='RdYlBu',
+                                          interpolation='lanczos',
                                           vmin=mn, vmax=mx)
         self.true_wv_ax.set(ylabel=r'Pupil $\eta$ [mm]', title='Truth')
         self.citer_wv_ax.set(xlabel=r'Pupil $\xi$ [mm]', title='Current Iteration')
@@ -222,6 +225,7 @@ class App(QMainWindow):
                                                   extent=self.pup_ext,
                                                   origin='lower',
                                                   cmap='RdYlBu',
+                                                  interpolation='lanczos',
                                                   vmin=mn, vmax=mx)
 
         # make room and draw the colorbar
