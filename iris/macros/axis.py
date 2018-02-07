@@ -1,6 +1,6 @@
 """Macros for performing simulations, etc."""
 from prysm.macros import thrufocus_mtf_from_wavefront, SimulationConfig
-from prysm.mathops import sqrt
+from prysm.mathops import floor, sqrt
 
 from iris.utilities import make_focus_range_realistic_number_of_microns, prepare_document
 from iris.recipes import sph_from_focusdiverse_axial_mtf
@@ -13,7 +13,7 @@ DEFAULT_CFG = SimulationConfig(
     fno=fno,
     wvl=lambda_,
     samples=128,
-    freqs=range(extinction, 10),
+    freqs=range(floor(extinction), 10),
     focus_range_waves=1 / 2 * sqrt(3),  # waves / Zernike/Hopkins / norm(Z4)
     focus_zernike=True,
     focus_normed=True,
