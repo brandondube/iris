@@ -6,6 +6,19 @@ from iris.utilities import make_focus_range_realistic_number_of_microns, prepare
 from iris.recipes import sph_from_focusdiverse_axial_mtf
 from iris.core import config_codex_params_to_pupil
 
+efl, fno, lambda_ = 50, 2, 0.55
+extinction = 1000 / (fno * lambda_)
+DEFAULT_CFG = SimulationConfig(
+    efl=efl,
+    fno=fno,
+    wvl=lambda_,
+    samples=128,
+    freqs=freqs,
+    focus_range_waves=1 / 2 * sqrt(3),  # waves / Zernike/Hopkins / norm(Z4)
+    focus_zernike=True,
+    focus_normed=True,
+    focus_planes=21)
+DEFAULT_CFG = make_focus_range_realistic_number_of_microns(cfg, 5)
 
 def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None):
     """Run a complete simulation generating and retrieving azimuthal order zero terms.
@@ -26,22 +39,8 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
 
     """
     if cfg is None:
-        efl = 50
-        fno = 2
-        lambda_ = 0.55
-        extinction = 1000 / (fno * lambda_)
-        freqs = tuple(range(10, floor(extinction), 10))
-        cfg = SimulationConfig(
-            efl=efl,
-            fno=fno,
-            wvl=lambda_,
-            samples=128,
-            freqs=freqs,
-            focus_range_waves=1 / 2 * sqrt(3),  # waves / Zernike/Hopkins / norm(Z4)
-            focus_zernike=True,
-            focus_normed=True,
-            focus_planes=21)
-        cfg = make_focus_range_realistic_number_of_microns(cfg, 5)
+        cfg = DEFAULT_CFG
+
     decoder_ring = {
         0: 'Z4',
         1: 'Z9',
@@ -51,7 +50,6 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
 
     pupil = config_codex_params_to_pupil(cfg, decoder_ring, truth)
     truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
-
     sim_result = sph_from_focusdiverse_axial_mtf(cfg, truth_df, decoder_ring, guess)
 
     residuals = []
