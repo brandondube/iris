@@ -60,8 +60,11 @@ def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
     Simply the sum of the square of differences between the model and truth data.
 
     """
-    t = ((true_tan - sim_tan) ** 2).sum()
-    s = ((true_sag - sim_sag) ** 2).sum()
+    global diffraction
+    difference_t = true_tan - sim_tan
+    difference_s = true_sag - sim_sag
+    t = ((abs(difference_t) / diffraction)).sum()
+    s = ((abs(difference_s) / diffraction)).sum()
     return t + s
 
 
@@ -84,7 +87,7 @@ def average_mse_focusplanes(costfcn):
     average over focus planes.
 
     """
-    return sum(costfcn)  # / len(costfcn)  # * setup_parameters.freq_step
+    return sum(costfcn) / len(costfcn) * (setup_parameters.freqs[1] - setup_parameters.freqs[0])
 
 
 def realize_focus_plane(params, t_true, s_true, defocus):

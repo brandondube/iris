@@ -8,6 +8,7 @@ import numpy as np
 
 from scipy.optimize import minimize
 
+from prysm.otf import diffraction_limited_mtf
 from prysm.thinlens import image_displacement_to_defocus
 
 from iris.core import optfcn, prepare_globals
@@ -132,12 +133,16 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
     # is the focal plane and the second frequency.
     t_true, s_true = list(ax_t), list(ax_s)
 
+    # now compute diffraction for the setup and use it as a normailzation
+    diffraction = diffraction_limited_mtf(setup_parameters.fno, setup_parameters.wvl, frequencies=setup_parameters.freqs)
+
     _globals = {
         't_true': t_true,
         's_true': s_true,
         'defocus': focus_diversity,
         'setup_parameters': setup_parameters,
         'decoder_ring': codex,
+        'diffraction': diffraction,
     }
     if parallel is True:
         pool = Pool(processes=os.cpu_count() - 1, initializer=prepare_globals, initargs=[_globals])
@@ -161,6 +166,7 @@ def sph_from_focusdiverse_axial_mtf(sys_parameters, truth_dataframe, codex, gues
                 method='L-BFGS-B',
                 options={
                     'disp': True,
+                    'ftol': 1e-2,
                 },
                 callback=callback)
 
