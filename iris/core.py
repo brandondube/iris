@@ -3,6 +3,7 @@ from functools import partial
 
 from prysm import FringeZernike, MTF
 from prysm.mtf_utils import mtf_ts_extractor
+from prysm.mathops import sqrt
 
 
 def config_codex_params_to_pupil(config, codex, params, defocus=0):
@@ -63,8 +64,99 @@ def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
     global diffraction
     difference_t = true_tan - sim_tan
     difference_s = true_sag - sim_sag
-    t = ((abs(difference_t) / diffraction)).sum()
-    s = ((abs(difference_s) / diffraction)).sum()
+    return difference_t, difference_s
+
+
+def _mtf_cost_core_diffractiondiv(difference_t, difference_s):
+    """Adjust the MTF differences by the diffraction limit.
+
+    Parameters
+    ----------
+    difference_t : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+
+    Returns
+    -------
+    difference_t : `numpy.ndarray`
+        adjusted difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        adjusted difference of measured and modeled sagittal MTF data
+
+    """
+    global diffraction
+    return difference_t / diffraction, difference_s / diffraction
+
+
+def _mtf_cost_core_manhattan(difference_t, difference_s):
+    """Adjust the raw difference of MTF to the Manhattan distance.
+
+    Parameters
+    ----------
+    difference_t : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+
+    Returns
+    -------
+    `float`
+        scalar cost function
+
+    Notes
+    -----
+    see NIST - https://xlinux.nist.gov/dads/HTML/manhattanDistance.html
+
+    """
+    t = (abs(difference_t)).sum()
+    s = (abs(difference_s)).sum()
+    return t + s
+
+
+def _mtf_cost_core_euclidian(difference_t, difference_s):
+    """Adjust the raw difference of MTF to the Euclidian distance.
+
+    Parameters
+    ----------
+    difference_t : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+
+    Returns
+    -------
+    `float`
+        scalar cost function
+
+    Notes
+    -----
+    see NIST - https://xlinux.nist.gov/dads/HTML/euclidndstnc.html
+
+    """
+    t = (sqrt(difference_t ** 2)).sum()
+    s = (sqrt(difference_s ** 2)).sum()
+    return t + s
+
+
+def _mtf_cost_core_sumsquarediff(difference_t, difference_s):
+    """Adjust the raw difference of MTF to the sum of the square of the differences.
+
+    Parameters
+    ----------
+    difference_t : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+
+    Returns
+    -------
+    `float`
+        scalar cost function
+
+    """
+    t = (difference_t ** 2).sum()
+    s = (difference_s ** 2).sum()
     return t + s
 
 
