@@ -37,7 +37,7 @@ def config_codex_params_to_pupil(config, codex, params, defocus=0):
                          rms_norm=s.focus_normed)
 
 
-def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
+def mtf_cost_core_main(true_tan, true_sag, sim_tan, sim_sag):
     """Cost function that compares a measured or simulated T/S MTF to a simulated one.
 
     Parameters
@@ -53,15 +53,16 @@ def mtf_cost_fcn(true_tan, true_sag, sim_tan, sim_sag):
 
     Returns
     -------
-    `float`
-        a scalar cost function
+    difference_t : `numpy.ndarray`
+        adjusted difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        adjusted difference of measured and modeled sagittal MTF data
 
     Notes
     -----
     Simply the sum of the square of differences between the model and truth data.
 
     """
-    global diffraction
     difference_t = true_tan - sim_tan
     difference_s = true_sag - sim_sag
     return difference_t, difference_s
@@ -101,8 +102,10 @@ def _mtf_cost_core_manhattan(difference_t, difference_s):
 
     Returns
     -------
-    `float`
-        scalar cost function
+    difference_t : `numpy.ndarray`
+        adjusted difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        adjusted difference of measured and modeled sagittal MTF data
 
     Notes
     -----
@@ -111,7 +114,7 @@ def _mtf_cost_core_manhattan(difference_t, difference_s):
     """
     t = (abs(difference_t)).sum()
     s = (abs(difference_s)).sum()
-    return t + s
+    return t, s
 
 
 def _mtf_cost_core_euclidian(difference_t, difference_s):
@@ -126,8 +129,10 @@ def _mtf_cost_core_euclidian(difference_t, difference_s):
 
     Returns
     -------
-    `float`
-        scalar cost function
+    difference_t : `numpy.ndarray`
+        adjusted difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        adjusted difference of measured and modeled sagittal MTF data
 
     Notes
     -----
@@ -136,7 +141,7 @@ def _mtf_cost_core_euclidian(difference_t, difference_s):
     """
     t = (sqrt(difference_t ** 2)).sum()
     s = (sqrt(difference_s ** 2)).sum()
-    return t + s
+    return t, s
 
 
 def _mtf_cost_core_sumsquarediff(difference_t, difference_s):
@@ -151,13 +156,34 @@ def _mtf_cost_core_sumsquarediff(difference_t, difference_s):
 
     Returns
     -------
-    `float`
-        scalar cost function
+    difference_t : `numpy.ndarray`
+        adjusted difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        adjusted difference of measured and modeled sagittal MTF data
 
     """
     t = (difference_t ** 2).sum()
     s = (difference_s ** 2).sum()
-    return t + s
+    return t, s
+
+
+def _mtf_cost_core_addreduce(difference_t, difference_s):
+    """Add the T, S differences between MTF curves.
+
+    Parameters
+    ----------
+    difference_t : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+    difference_s : `numpy.ndarray`
+        raw difference of measured and modeled tangential MTF data
+
+    Returns
+    -------
+    `float`
+        scalar cost function
+
+    """
+    return difference_t + difference_s
 
 
 def average_mse_focusplanes(costfcn):
@@ -182,7 +208,9 @@ def average_mse_focusplanes(costfcn):
     return sum(costfcn) / len(costfcn) * (setup_parameters.freqs[1] - setup_parameters.freqs[0])
 
 
-def realize_focus_plane(params, t_true, s_true, defocus):
+def realize_focus_plane(params, t_true, s_true, defocus,
+                        cost_chain=(_mtf_cost_core_diffractiondiv, _mtf_cost_core_manhattan),
+                        cost_final=_mtf_cost_core_addreduce):
     """Compute the cost function for a single focal plane.
 
     Parameters
@@ -193,20 +221,33 @@ def realize_focus_plane(params, t_true, s_true, defocus):
         array of true MTF values
     s_true : `numpy.ndarray`
         array of true MTF values
-    defocus_wavefront : float
+    defocus_wavefront : `float`
         amount of defocus, in same units as params
+    cost_chain : iterable
+        set of actions to take to adjust the cost function.
+    cost_final : callable
+        a function which takes two array_likes as inputs and returns a float
 
     Returns
     -------
     `float`
         value of the cost function for this focus plane realization
 
+    Notes
+    -----
+    cost_chain is a middleware-like construct; each element will take two arguments, a modified
+    tangential and sagittal difference and return another modified tangential and sagittal
+    difference.
+
     """
     global setup_parameters, decoder_ring
     prop_wvfront = config_codex_params_to_pupil(setup_parameters, decoder_ring, params, defocus)
     mtf = MTF.from_pupil(prop_wvfront, setup_parameters.efl)
     t, s = mtf_ts_extractor(mtf, setup_parameters.freqs)
-    return mtf_cost_fcn(t_true, s_true, t, s)
+    dt, ds = mtf_cost_core_main(t_true, s_true, t, s)  # "raw" and signed difference
+    for callable_ in cost_chain:  # loop over modifications and apply them in sequence
+        dt, ds = callable_(dt, ds)
+    return cost_final(ds, dt)     # finally, reduce the value to a scalar / float
 
 
 def optfcn(wavefrontcoefs):
