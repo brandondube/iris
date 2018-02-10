@@ -59,7 +59,7 @@ nit = len(opt_res['result_iter'])
 focus_um = defocus_to_image_displacement(cfg.focus_range_waves, cfg.fno, cfg.wvl, cfg.focus_zernike, cfg.focus_normed)
 
 CACHE = defaultdict(dict)
-GAMMA = 1.5
+GAMMA = 1
 
 
 def df_to_mtf_array(df, azimuth='Tan'):
@@ -286,11 +286,6 @@ class App(QMainWindow):
         self.update_optdata_plot()
         self.update_wavefront_plot()
         self.update_cost_plot()
-
-        arr_true = df_to_mtf_array(df, 'Tan')
-        arr_00 = CACHE[self.iteration]['mtfarr']
-        costfcn = ((arr_true - arr_00) ** 2).sum()
-        print(costfcn)
 
     def update_slidertext(self):
         """Update the slider text."""
