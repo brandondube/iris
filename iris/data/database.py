@@ -59,7 +59,8 @@ class Database(object):
     def _load_from_disk(self):
         """Load a database from disk."""
         self.df = pd.read_csv(self.csvpath)
-        self.fields = self.df.columns.tolist()
+        fields = self.df.columns.tolist()
+        self.fields = [f for f in fields if f != 'id']
 
     def _write_to_disk(self):
         """Write the dataframe to disk."""
