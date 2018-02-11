@@ -41,6 +41,7 @@ class Worker(object):
             self.mode = 'jobs'
 
         self.q = queue
+        self.db = database
         self.work_time = work_time
         self.work_jobs = work_jobs
         self.status = 'stopped'
