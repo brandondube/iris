@@ -208,9 +208,7 @@ def average_mse_focusplanes(costfcn):
     return sum(costfcn) / len(costfcn) * (setup_parameters.freqs[1] - setup_parameters.freqs[0])
 
 
-def realize_focus_plane(params, t_true, s_true, defocus,
-                        cost_chain=(_mtf_cost_core_diffractiondiv, _mtf_cost_core_manhattan),
-                        cost_final=_mtf_cost_core_addreduce):
+def realize_focus_plane(params, t_true, s_true, defocus, cost_chain, cost_final):
     """Compute the cost function for a single focal plane.
 
     Parameters
@@ -250,30 +248,48 @@ def realize_focus_plane(params, t_true, s_true, defocus,
     return cost_final(ds, dt)     # finally, reduce the value to a scalar / float
 
 
-def optfcn(wavefrontcoefs):
+COST_CHAIN_DEFAULT = (_mtf_cost_core_diffractiondiv, _mtf_cost_core_manhattan)
+COST_FINAL_DEFAULT = _mtf_cost_core_addreduce
+
+
+def optfcn(wavefrontcoefs, cost_chain=None, cost_final=None):
     """Optimization routine used to compare simulation data to measurement data.
 
     Parameters
     ----------
     wavefrontcoefs : iterable
         a vector of wavefront coefficients
+    cost_chain : iterable or None, optional
+        set of actions to take to adjust the cost function.
+    cost_final : callable or None, optional
+        a function which takes two array_likes as inputs and returns a float
 
     Returns
     -------
     `float`
         cost function value
 
+    Notes
+    -----
+    cost_chain is a middleware-like construct; each element will take two arguments, a modified
+    tangential and sagittal difference and return another modified tangential and sagittal
+    difference.
+
     """
     # generate a "base pupil" with some aberration content
     global setup_parameters, decoder_ring, pool, t_true, s_true, defocus
+    if cost_chain is None:
+        cost_chain = COST_CHAIN_DEFAULT
+    if cost_final is None:
+        cost_final = COST_FINAL_DEFAULT
 
     if pool is not None:
-        rfp_mp = partial(realize_focus_plane, wavefrontcoefs)
+        rfp_mp = partial(realize_focus_plane, wavefrontcoefs, cost_chain=cost_chain, cost_final=cost_final)
         costfcn = pool.starmap(rfp_mp, zip(t_true, s_true, defocus))
     else:
         costfcn = []
         for t, s, defocus_ in zip(t_true, s_true, defocus):
-            costfcn.append(realize_focus_plane(wavefrontcoefs, t, s, defocus_))
+            costfcn.append(realize_focus_plane(wavefrontcoefs, t, s, defocus_, cost_chain, cost_final))
 
     return average_mse_focusplanes(costfcn)
 
