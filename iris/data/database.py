@@ -1,6 +1,7 @@
 """A rudimentary database object."""
 import uuid
 import pickle
+import asyncio
 from pathlib import Path
 
 import pandas as pd
@@ -35,10 +36,12 @@ class Database(object):
             self.fields = fields
             self.df = pd.DataFrame(columns=fields)
 
+        self.os_lock = None
+
     def _load_from_disk(self):
         """Load a database from disk."""
         self.df = pd.load_csv(self.path / 'index.csv')
-        self.fields = list(self.df)
+        self.fields = self.df.columns.tolist()
 
     def append(self, document):
         """Append a document to the database.
@@ -58,6 +61,11 @@ class Database(object):
         with open(self.data_root / id, 'wb') as fid:
             pickle.dump(document, fid)
 
+        if isinstance(self.os_lock, asyncio.Task):  # can be None if db just initialized
+            if not self.os_lock.done():  # if csv write incomplete, interrupt
+                self.os_lock.cancel()
+        self.os_lock = asyncio.ensure_future(write_df_to_file(self.df, self.path))  # write to file
+
     def get_document(self, id):
         """Return a document from the database.
 
@@ -75,3 +83,17 @@ class Database(object):
         with open(self.data_root / id, 'rb') as fid:
             doc = pickle.load(fid)
         return doc
+
+
+async def write_df_to_file(df, path):
+    """Asyncronously write a dataframe to a csv file.
+
+    Parameters
+    ----------
+    df : `pandas.DataFrame`
+        a pandas df
+    path : path_like
+        where to writ the df to
+
+    """
+    await df.to_csv(path, index=False)
