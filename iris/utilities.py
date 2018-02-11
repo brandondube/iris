@@ -110,17 +110,25 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter,
         -------
         `dict`
             dictionary with keys, types:
+                  # not going on database
                 - sim_params, `~prysm.macro.SimulationConfig`
-                - codex, dict
-                - truth_params, tuple
-                - truth_rmswfe, float
-                - zernike_norm, bool
-                - result_final, tuple
-                - result_iter, list
-                - cost_final, float
-                - cost_iter, list
-                - rmswfe_iter, list
-                - time, float
+                - codex, `dict`
+                - truth_params, `tuple`
+                - zernike_norm, `bool`
+                - result_iter, `list`
+                - cost_iter, `list`
+                - rrmswfe_iter, `list`
+                - result_final, `tuple`
+                  # going on database
+                - truth_rmswfe, `float`
+                - cost_first, `float`
+                - cost_final, `float`
+                - rrmswfe_first, `float`
+                - rrmswfe_final, `float`
+                - time, `float`
+                - nit, `int`
+                - nfev, `int`
+                - njev, `int`
 
         """
         x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
@@ -128,14 +136,20 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter,
             'sim_params': sim_params,
             'codex': codex,
             'truth_params': truth_params,
-            'truth_rmswfe': truth_rmswfe,
             'zernike_normed': normed,
-            'result_final': x,
             'result_iter': xiter,
-            'cost_final': f,
             'cost_iter': fiter,
-            'rmswfe_iter': rmswfe_iter,
+            'rrmswfe_iter': rmswfe_iter,
+            'result_final': x,
+            'truth_rmswfe': truth_rmswfe,
+            'cost_first': fiter[0],
+            'cost_final': f,
+            'rrmswfe_first': rmswfe_iter[0],
+            'rrmswfe_final': rmswfe_iter[1],
             'time': t,
+            'nit': optimization_result.nit,
+            'nfev': optimization_result.nfev,
+            'njev': optimization_result.njev,
         }
 
 

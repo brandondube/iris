@@ -217,7 +217,7 @@ class App(QMainWindow):
             self.cost_highlight, = self.cost_axis.plot(0, opt_res['cost_iter'][0], '.', ms=15)
             self.cost_axis.set(ylabel='Cost Function Value [a.u.]')
 
-            self.rmswfe_axis.plot(iters, opt_res['rmswfe_iter'], lw=3)
+            self.rmswfe_axis.plot(iters, opt_res['rrmswfe_iter'], lw=3)
             self.rmswfe_highlight, = self.rmswfe_axis.plot(0, opt_res['rmswfe_iter'][0], '.', ms=15)
             self.rmswfe_axis.set(xlabel='Iteration', ylabel=r'Residual RMS WFE [$\lambda$]')
             self.rmswfe_axis.xaxis.set_major_formatter(ScalarFormatter())
