@@ -49,10 +49,20 @@ class Database(object):
             self.df = pd.DataFrame(columns=(*fields, 'id'))
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
+    def _init_csv(self):
+        if self.df.empty:
+            self._write_to_disk()
+        else:
+            raise UserWarning('Database is not empty.')
+
     def _load_from_disk(self):
         """Load a database from disk."""
         self.df = pd.read_csv(self.csvpath)
         self.fields = self.df.columns.tolist()
+
+    def _write_to_disk(self):
+        """Write the dataframe to disk."""
+        self.df.to_csv(self.csvpath, index=False)
 
     def append(self, document):
         """Append a document to the database.
@@ -72,7 +82,7 @@ class Database(object):
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
 
-        self.df.to_csv(self.csvpath, index=False)
+        self._write_to_disk()
 
     def get_document(self, id_):
         """Return a document from the database.
