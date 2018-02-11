@@ -21,7 +21,7 @@ class Database(object):
             path to the folder containing the database
         fields : iterable, optional
             set of fields to use if creating a new database, else ignored
-        overwrite: bool, optional
+        overwrite: `bool`, optional
             whether to overwrite an existing database at path
 
         Notes
