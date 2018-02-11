@@ -21,9 +21,12 @@ class PersistentQueue(deque):
             persists it to disk.  Use this where the consuming code of that
             object will not fail.
 
-    Attributes:
-        path (Path): path on disk of the queue
-        q (deque): double ended queue object
+    Attributes
+    ----------
+    path : Path
+    path on disk of the queue
+    q : deque
+    double ended queue object
 
     """
 
@@ -51,17 +54,35 @@ class PersistentQueue(deque):
     def put(self, item):
         """Put an item on the end of the queue.
 
-        Args:
-            item (object): an item
+        Parameters
+        ----------
+        item : object
+            an item
+
         """
         self.q.append(item)
+        self.persist()
+
+    def put_many(self, items):
+        """Put many items on the end of the queue before persisting to disk, faster and avoids thrashing.
+
+        Parameters
+        ----------
+        items : iterable
+            sequence of items to append
+
+        """
+        for item in items:
+            self.q.append(item)
         self.persist()
 
     def get(self):
         """Return the leftmost item on the queue and remove it.
 
-        Returns:
-            object: leftmost item in queue.
+        Returns
+        -------
+        object
+            leftmost item in queue
 
         """
         return self.q.popleft()
@@ -70,8 +91,10 @@ class PersistentQueue(deque):
     def peek(self):
         """Return the leftmost item on the queue without removing it.
 
-        Returns:
-            object: leftmost item in queue.
+        Returns
+        -------
+        object
+            leftmost item in queue
 
         """
         item = self.q.popleft()
