@@ -27,6 +27,7 @@ class Database(object):
         """
         self.path = Path(path)
         self.data_root = path / 'db'
+        self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
         if path is not None:
             self.df = None
