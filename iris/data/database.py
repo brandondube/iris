@@ -1,4 +1,6 @@
 """A rudimentary database object."""
+import os
+import shutil
 import uuid
 import pickle
 import asyncio
@@ -10,30 +12,37 @@ import pandas as pd
 class Database(object):
     """A database."""
 
-    def __init__(self, path=None, fields=None):
+    def __init__(self, path, fields=None, overwrite=False):
         """Initialize a database.
 
         Parameters
         ----------
-        path : `pathlib.Path` or `str` optional
-            path to the folder containing the database; None if creating a new db
+        path : `pathlib.Path` or `str`
+            path to the folder containing the database
         fields : iterable, optional
             set of fields to use if creating a new database, else ignored
+        overwrite: bool, optional
+            whether to overwrite an existing database at path
 
         Notes
         -----
-        if both path and fields are provided, path takes precedence and fields will be ignored
+        if fields is provided and a db exists at the given path already, an exception will be raised
 
         """
         self.path = Path(path)
-        self.data_root = path / 'db'
+        self.data_root = self.path / 'db'
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
-        if path is not None:  # if a path is provided, initialize the db from the path
+        if fields is None:  # initialize the db from the path
             self.df = None
             self.fields = None
             self._load_from_disk()
-        else:  # if not, create from scratch
+        else:  # if not, create from scratch or raise if there is a db at the path and overwrite=False
+            if os.path.isfile(self.path / 'index.csv'):
+                if not overwrite:
+                    raise IOError('There is an existing database at this location.  Delete it, or use overwrite=True.')
+                else:
+                    shutil.rmtree(self.data_root)
             self.fields = fields
             self.df = pd.DataFrame(columns=fields)
 
@@ -59,7 +68,7 @@ class Database(object):
             row_item[field] = document[field]
 
         self.df.append(row_item)
-        with open(self.data_root / id_, 'wb') as fid:  # write the file to disk
+        with open(self.data_root / id_ / '.pkl', 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
 
         if isinstance(self.os_lock, asyncio.Task):  # can be None if db just initialized
@@ -81,7 +90,7 @@ class Database(object):
             object keyed by this id
 
         """
-        with open(self.data_root / id_, 'rb') as fid:
+        with open(self.data_root / id_ / '.pkl', 'rb') as fid:
             doc = pickle.load(fid)
         return doc
 
