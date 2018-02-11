@@ -128,7 +128,6 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter,
                 - time, `float`
                 - nit, `int`
                 - nfev, `int`
-                - njev, `int`
 
         """
         x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
@@ -149,7 +148,6 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter,
             'time': t,
             'nit': optimization_result.nit,
             'nfev': optimization_result.nfev,
-            'njev': optimization_result.njev,
         }
 
 
