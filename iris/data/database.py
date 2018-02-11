@@ -52,13 +52,13 @@ class Database(object):
             a dictionary with several fields
 
         """
-        id = str(uuid.uuid4())
-        row_item = {'id': id}
+        id_ = str(uuid.uuid4())
+        row_item = {'id': id_}
         for field in self.fields:
             row_item[field] = document[field]
 
         self.df.append(row_item)
-        with open(self.data_root / id, 'wb') as fid:
+        with open(self.data_root / id_, 'wb') as fid:
             pickle.dump(document, fid)
 
         if isinstance(self.os_lock, asyncio.Task):  # can be None if db just initialized
@@ -66,7 +66,7 @@ class Database(object):
                 self.os_lock.cancel()
         self.os_lock = asyncio.ensure_future(write_df_to_file(self.df, self.path))  # write to file
 
-    def get_document(self, id):
+    def get_document(self, id_):
         """Return a document from the database.
 
         Parameters
@@ -80,7 +80,7 @@ class Database(object):
             object keyed by this id
 
         """
-        with open(self.data_root / id, 'rb') as fid:
+        with open(self.data_root / id_, 'rb') as fid:
             doc = pickle.load(fid)
         return doc
 
