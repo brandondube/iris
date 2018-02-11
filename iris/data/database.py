@@ -49,7 +49,7 @@ class Database(object):
             self.df = pd.DataFrame(columns=(*fields, 'id'))
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
-    def _init_csv(self):
+    def init_csv(self):
         if self.df.empty:
             self._write_to_disk()
         else:
