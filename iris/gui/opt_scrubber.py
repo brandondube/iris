@@ -5,7 +5,6 @@ from pathlib import Path
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 
 import matplotlib as mpl
 mpl.use('Qt5agg')
@@ -32,26 +31,15 @@ from iris.core import config_codex_params_to_pupil  # noqa
 
 root = Path(__file__).parent / '..' / '..' / '..' / 'simulations'
 
-truth_data = root / 'truth_df.csv'
-truth_wvfront = root / 'truth_wavefront.pkl'
-sim_cfg = root / 'config.pkl'
-sim_result = root / 'optimization_result.pkl'
+data_location = root / 'optimization_result.pkl'
 
-
-# load truth data
-df = pd.read_csv(truth_data)
-
-# load truth wavefront
-with open(truth_wvfront, 'rb') as fid:
-    true_wvfront = pickle.load(fid)
-
-# load configuration
-with open(sim_cfg, 'rb') as fid:
-    cfg = pickle.load(fid)
-
-# load optimization history
-with open(sim_result, 'rb') as fid:
+with open(data_location, 'rb') as fid:
     opt_res = pickle.load(fid)
+
+cfg, codex, params = opt_res['sim_params'], opt_res['codex'], opt_res['truth_params']
+true_wvfront = config_codex_params_to_pupil(cfg, codex, params)
+truth_dat, _ = thrufocus_mtf_from_wavefront_array(true_wvfront, cfg)
+
 
 # compute some metadata
 epd = cfg.efl / cfg.fno
@@ -59,28 +47,7 @@ nit = len(opt_res['result_iter'])
 focus_um = defocus_to_image_displacement(cfg.focus_range_waves, cfg.fno, cfg.wvl, cfg.focus_zernike, cfg.focus_normed)
 
 CACHE = defaultdict(dict)
-GAMMA = 1
-
-
-def df_to_mtf_array(df, azimuth='Tan'):
-    """Convert a dataframe to a 2D array of MTF data with axes of (freq,focus).
-
-    Parameters
-    ----------
-    df : `pandas.DataFrame`
-        a dataframe with a column for azimuth, focus, frequency, and MTF
-    azimuth : `str`, optional, {'Tan', 'Sag'}
-        which azimuth to grab
-
-    Returns
-    -------
-    `numpy.ndarray`
-        2d ndarray
-
-    """
-    return df[df.Azimuth == azimuth].as_matrix(columns=['MTF']).reshape(cfg.focus_planes, len(cfg.freqs))
-
-
+GAMMA = 1.5
 OPTDATAKEY = 'mtfarr'
 WVFRONTKEY = 'wvfront'
 
@@ -162,7 +129,6 @@ class App(QMainWindow):
         self.truth_ax, self.citer_ax = self.opt_fig.subplots(nrows=2)
 
         # draw the truth image
-        truth_dat = df_to_mtf_array(df, 'Tan')
         self.dat_ext = [0, cfg.freqs[-1], -focus_um, focus_um]
 
         truth_im = self.truth_ax.imshow(truth_dat,
