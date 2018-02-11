@@ -29,11 +29,11 @@ class Database(object):
         self.data_root = path / 'db'
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
-        if path is not None:
+        if path is not None:  # if a path is provided, initialize the db from the path
             self.df = None
             self.fields = None
             self._load_from_disk()
-        else:
+        else:  # if not, create from scratch
             self.fields = fields
             self.df = pd.DataFrame(columns=fields)
 
@@ -53,13 +53,13 @@ class Database(object):
             a dictionary with several fields
 
         """
-        id_ = str(uuid.uuid4())
+        id_ = str(uuid.uuid4())  # get a unique ID for the document
         row_item = {'id': id_}
-        for field in self.fields:
+        for field in self.fields:  # build the dataframe row
             row_item[field] = document[field]
 
         self.df.append(row_item)
-        with open(self.data_root / id_, 'wb') as fid:
+        with open(self.data_root / id_, 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
 
         if isinstance(self.os_lock, asyncio.Task):  # can be None if db just initialized
