@@ -50,7 +50,7 @@ class Database(object):
 
     def _load_from_disk(self):
         """Load a database from disk."""
-        self.df = pd.load_csv(self.path / 'index.csv')
+        self.df = pd.read_csv(self.path / 'index.csv')
         self.fields = self.df.columns.tolist()
 
     def append(self, document):
