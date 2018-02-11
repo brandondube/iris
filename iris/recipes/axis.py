@@ -24,7 +24,7 @@ def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
     Returns
     -------
     list
-        list of arrays that are truth values for w040, w060, w080
+        list of arrays that are truth values for each of Z4, Z9, Z16, Z25
 
     """
     if symmetric is True:
@@ -42,6 +42,34 @@ def generate_axial_truth_coefs(max_val, num_steps, symmetric=True):
     # here, figure out what w020 is for best focus and add it to the
     # coefficients
     return coefs
+
+
+def generate_random_axial_truth_coefs(peak, ncoefs, symmetric=True):
+    """Generate random axial truth coefficients.
+
+    Parameters
+    ----------
+    peak : `float`
+        peak value, in waves RMS
+    ncoefs : `int`
+        number of truths to generate
+    symmetric : `bool`, optional
+        whether the distribution is symmetric and ranges from (-peak, peak)
+
+    Returns
+    -------
+    `list`
+        a list of coefficient arrays of length ncoefs
+
+    """
+    dat = np.random.random((ncoefs, 4))
+    if symmetric is True:
+        dat -= 0.5
+        dat *= (2 * peak)
+    else:
+        dat *= peak
+
+    return list(dat)
 
 
 def grab_axial_data(setup_parameters, truth_dataframe):
