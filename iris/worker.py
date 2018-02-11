@@ -32,7 +32,7 @@ class Worker(object):
         self.mode = None
         if work_time is not None:
             self.start_time = time.monotonic()
-            self.end_time = self.start_time() + (60 * work_time)
+            self.end_time = self.start_time + (60 * work_time)
             self.mode = 'time'
         else:
             self.start_job = 0
@@ -52,7 +52,7 @@ class Worker(object):
         self.db.append(result)
         self.q.mark_done()
 
-    def begin(self):
+    def start(self):
         """Begin working and block."""
         self.status = 'working'
         while self.status == 'working':
