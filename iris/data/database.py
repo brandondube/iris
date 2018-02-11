@@ -50,6 +50,7 @@ class Database(object):
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
     def init_csv(self):
+        """Initialize the database index to disk."""
         if self.df.empty:
             self._write_to_disk()
         else:
