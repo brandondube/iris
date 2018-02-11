@@ -1,10 +1,12 @@
 """Recipes for various solve types."""
 from iris.recipes.axis import (
     grab_axial_data,
-    sph_from_focusdiverse_axial_mtf,
+)
+from iris.recipes.main import (
+    opt_routine,
 )
 
 __all__ = [
     'grab_axial_data',
-    'sph_from_focusdiverse_axial_mtf',
+    'opt_routine',
 ]
