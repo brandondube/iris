@@ -31,7 +31,6 @@ class Database(object):
         self.path = Path(path)
         self.data_root = self.path / 'db'
         self.csvpath = self.path / 'index.csv'
-        self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
         if fields is None:  # initialize the db from the path
             self.df = None
@@ -43,8 +42,12 @@ class Database(object):
                     raise IOError('There is an existing database at this location.  Delete it, or use overwrite=True.')
                 else:
                     shutil.rmtree(self.data_root)
-            self.fields = fields
-            self.df = pd.DataFrame(columns=fields)
+                    os.remove(self.csvpath)
+            if 'id' in fields:
+                raise ValueError('cannot use ID as a field')
+            self.fields = tuple(fields)
+            self.df = pd.DataFrame(columns=(*fields, 'id'))
+        self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
     def _load_from_disk(self):
         """Load a database from disk."""
@@ -65,7 +68,7 @@ class Database(object):
         for field in self.fields:  # build the dataframe row
             row_item[field] = document[field]
 
-        self.df.append(row_item, ignore_index=True)
+        self.df = self.df.append(row_item, ignore_index=True)  # assign to df, does not modifiy in-place
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
 
