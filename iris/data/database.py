@@ -3,7 +3,6 @@ import os
 import shutil
 import uuid
 import pickle
-import asyncio
 from pathlib import Path
 
 import pandas as pd
@@ -31,6 +30,7 @@ class Database(object):
         """
         self.path = Path(path)
         self.data_root = self.path / 'db'
+        self.csvpath = self.path / 'index.csv'
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
         if fields is None:  # initialize the db from the path
@@ -38,7 +38,7 @@ class Database(object):
             self.fields = None
             self._load_from_disk()
         else:  # if not, create from scratch or raise if there is a db at the path and overwrite=False
-            if os.path.isfile(self.path / 'index.csv'):
+            if os.path.isfile(self.csvpath):
                 if not overwrite:
                     raise IOError('There is an existing database at this location.  Delete it, or use overwrite=True.')
                 else:
@@ -46,11 +46,9 @@ class Database(object):
             self.fields = fields
             self.df = pd.DataFrame(columns=fields)
 
-        self.os_lock = None
-
     def _load_from_disk(self):
         """Load a database from disk."""
-        self.df = pd.read_csv(self.path / 'index.csv')
+        self.df = pd.read_csv(self.csvpath)
         self.fields = self.df.columns.tolist()
 
     def append(self, document):
@@ -67,14 +65,11 @@ class Database(object):
         for field in self.fields:  # build the dataframe row
             row_item[field] = document[field]
 
-        self.df.append(row_item)
-        with open(self.data_root / id_ / '.pkl', 'wb') as fid:  # write the file to disk
+        self.df.append(row_item, ignore_index=True)
+        with open(self.data_root / f'{id_}.pkl', 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
 
-        if isinstance(self.os_lock, asyncio.Task):  # can be None if db just initialized
-            if not self.os_lock.done():  # if csv write incomplete, interrupt
-                self.os_lock.cancel()
-        self.os_lock = asyncio.ensure_future(write_df_to_file(self.df, self.path))  # write to file
+        self.df.to_csv(self.csvpath, index=False)
 
     def get_document(self, id_):
         """Return a document from the database.
@@ -90,20 +85,6 @@ class Database(object):
             object keyed by this id
 
         """
-        with open(self.data_root / id_ / '.pkl', 'rb') as fid:
+        with open(self.data_root / f'{id_}.pkl', 'rb') as fid:
             doc = pickle.load(fid)
         return doc
-
-
-async def write_df_to_file(df, path):
-    """Asyncronously write a dataframe to a csv file.
-
-    Parameters
-    ----------
-    df : `pandas.DataFrame`
-        a pandas df
-    path : path_like
-        where to writ the df to
-
-    """
-    await df.to_csv(path, index=False)
