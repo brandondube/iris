@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (  # noqa
 )
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # noqa
-from matplotlib.ticker import ScalarFormatter  # noqa
+from matplotlib.ticker import MaxNLocator  # noqa
 from matplotlib import pyplot as plt  # noqa
 
 from prysm.thinlens import defocus_to_image_displacement  # noqa
@@ -31,7 +31,7 @@ from iris.core import config_codex_params_to_pupil  # noqa
 
 root = Path(__file__).parent / '..' / '..' / '..' / 'simulations'
 
-data_location = root / 'results' / 'axis_sph_randomsearch_0pt3' / 'db' / '03866b57-16e3-4135-87ed-b9db7e0aaba8.pkl'
+data_location = root / 'results' / 'axis_sph_randomsearch_0pt3' / 'db' / '676fff2c-35f1-48f9-b61b-3ce30ffb89a2.pkl'
 
 with open(data_location, 'rb') as fid:
     opt_res = pickle.load(fid)
@@ -220,7 +220,7 @@ class App(QMainWindow):
             self.rmswfe_axis.plot(iters, opt_res['rrmswfe_iter'], lw=3)
             self.rmswfe_highlight, = self.rmswfe_axis.plot(0, opt_res['rrmswfe_iter'][0], '.', ms=15)
             self.rmswfe_axis.set(xlabel='Iteration', ylabel=r'Residual RMS WFE [$\lambda$]')
-            self.rmswfe_axis.xaxis.set_major_formatter(ScalarFormatter())
+            self.rmswfe_axis.xaxis.set_major_locator(MaxNLocator(integer=True))
             self.cost_fig.tight_layout()
 
         self.plot_layout.addWidget(self.cost_canvas)
