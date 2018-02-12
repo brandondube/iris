@@ -56,16 +56,20 @@ class Worker(object):
     def start(self):
         """Begin working and block."""
         self.status = 'working'
-        while self.status == 'working':
-            self.do_job()
-            if self.mode == 'jobs':
-                self.current_job += 1
-                if self.current_job >= self.end_job:
-                    self.status = 'stopped'
-            else:
-                now = time.monotonic()
-                if now > self.end_time:
-                    self.status = 'stopped'
+        try:
+            while self.status == 'working':
+                self.do_job()
+                if self.mode == 'jobs':
+                    self.current_job += 1
+                    if self.current_job >= self.end_job:
+                        self.status = 'stopped'
+                else:
+                    now = time.monotonic()
+                    if now > self.end_time:
+                        self.status = 'stopped'
+        except KeyboardInterrupt:
+            print('stopping - user requested')
+            self.end()
 
     def end(self):
         """End working and clean up."""
