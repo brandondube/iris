@@ -48,7 +48,13 @@ class Worker(object):
 
     def do_job(self):
         """Do a job."""
-        item = self.q.peek()
+        try:
+            item = self.q.peek()
+        except IndexError:
+            print('stopping - queue exhausted')
+            self.end()
+            return
+
         result = run_azimuthalzero_simulation(truth=item)
         self.db.append(result)
         self.q.mark_done()
