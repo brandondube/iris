@@ -69,6 +69,8 @@ def generate_random_axial_truth_coefs(peak, ncoefs, symmetric=True):
     else:
         dat *= peak
 
+    dat[:, 0] = 0  # set defocus to zero
+
     return list(dat)
 
 
