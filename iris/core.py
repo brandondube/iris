@@ -245,7 +245,7 @@ def realize_focus_plane(params, t_true, s_true, defocus, cost_chain, cost_final)
     dt, ds = mtf_cost_core_main(t_true, s_true, t, s)  # "raw" and signed difference
     for callable_ in cost_chain:  # loop over modifications and apply them in sequence
         dt, ds = callable_(dt, ds)
-    return cost_final(ds, dt)     # finally, reduce the value to a scalar / float
+    return cost_final(dt, ds)     # finally, reduce the value to a scalar / float
 
 
 COST_CHAIN_DEFAULT = (_mtf_cost_core_diffractiondiv, _mtf_cost_core_manhattan)
