@@ -31,7 +31,7 @@ from iris.core import config_codex_params_to_pupil  # noqa
 
 root = Path(__file__).parent / '..' / '..' / '..' / 'simulations'
 
-data_location = root / 'optimization_result.pkl'
+data_location = root / 'results' / 'axis_sph_randomsearch_0pt3' / 'db' / '03866b57-16e3-4135-87ed-b9db7e0aaba8.pkl'
 
 with open(data_location, 'rb') as fid:
     opt_res = pickle.load(fid)
@@ -218,7 +218,7 @@ class App(QMainWindow):
             self.cost_axis.set(ylabel='Cost Function Value [a.u.]')
 
             self.rmswfe_axis.plot(iters, opt_res['rrmswfe_iter'], lw=3)
-            self.rmswfe_highlight, = self.rmswfe_axis.plot(0, opt_res['rmswfe_iter'][0], '.', ms=15)
+            self.rmswfe_highlight, = self.rmswfe_axis.plot(0, opt_res['rrmswfe_iter'][0], '.', ms=15)
             self.rmswfe_axis.set(xlabel='Iteration', ylabel=r'Residual RMS WFE [$\lambda$]')
             self.rmswfe_axis.xaxis.set_major_formatter(ScalarFormatter())
             self.cost_fig.tight_layout()
@@ -272,7 +272,7 @@ class App(QMainWindow):
         self.cost_highlight.set_xdata(self.iteration)
         self.cost_highlight.set_ydata(opt_res['cost_iter'][self.iteration])
         self.rmswfe_highlight.set_xdata(self.iteration)
-        self.rmswfe_highlight.set_ydata(opt_res['rmswfe_iter'][self.iteration])
+        self.rmswfe_highlight.set_ydata(opt_res['rrmswfe_iter'][self.iteration])
         self.cost_fig.canvas.draw_idle()
 
 
