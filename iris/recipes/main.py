@@ -58,7 +58,6 @@ def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
     setup_data = prep_data(sys_parameters, truth_dataframe)
     pool = prep_globals(setup_data, sys_parameters, codex, parallel)
 
-    optimizer_function = optfcn
     parameter_vectors = []
 
     def callback(x):
@@ -72,7 +71,7 @@ def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
             if core_opts is None:
                 args = (None, None)
             result = minimize(
-                fun=optimizer_function,
+                fun=optfcn,
                 x0=guess,
                 method='L-BFGS-B',
                 options={
