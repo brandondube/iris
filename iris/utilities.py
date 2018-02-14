@@ -59,6 +59,27 @@ def make_focus_range_realistic_number_of_microns(cfg, round_focus_to=5):
     return SimulationConfig(**cfg_dict)
 
 
+def split_lbfgsb_iters(string):
+    """Split captured output from L-BFGS-B into a sequence of outputs, each containing a single chunk.
+
+    Parameters
+    ----------
+    string : `str`
+        a string output from L-BFGS-B
+
+    Returns
+    -------
+    `list`
+        a list of strings, each is an output from L-BFGS-B
+
+    """
+    starts = [s.start() for s in re.finditer('RUNNING', string)]
+    blobs = []
+    for idx in range(len(starts[:-1])):
+        blobs.append(string[starts[idx]:starts[idx + 1]])
+    return blobs
+
+
 def parse_cost_by_iter_lbfgsb(string):
     """Parse the cost function history from L-BFGS-B optimizer print statements.
 
