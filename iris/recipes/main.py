@@ -54,7 +54,6 @@ def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
             - time, float
 
     """
-    # declare some state for this run as global variables to speed up access in multiprocess pool
     setup_data = prep_data(sys_parameters, truth_dataframe)
     pool = prep_globals(setup_data, sys_parameters, codex, parallel)
 
@@ -153,6 +152,7 @@ def prep_globals(setup_data, setup_parameters, codex, parallel):
         a multiprocessing pool
 
     """
+    # declare some state for this run as global variables to speed up access in multiprocess pool
     _globals = {
         't_true': setup_data.t_true,
         's_true': setup_data.s_true,
