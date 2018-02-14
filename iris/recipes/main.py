@@ -55,9 +55,8 @@ def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
 
     """
     # declare some state for this run as global variables to speed up access in multiprocess pool
-    setup_parameters = sys_parameters
-    setup_data = prep_data(setup_parameters, truth_dataframe)
-    pool = prep_globals(setup_data, setup_parameters, codex, parallel)
+    setup_data = prep_data(sys_parameters, truth_dataframe)
+    pool = prep_globals(setup_data, sys_parameters, codex, parallel)
 
     optimizer_function = optfcn
     parameter_vectors = []
@@ -97,7 +96,7 @@ def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
 
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                             parallel=False, core_opts=None):
+                             max_starts=25, parallel=False, core_opts=None):
     pass
 
 
