@@ -75,8 +75,12 @@ def split_lbfgsb_iters(string):
     """
     starts = [s.start() for s in re.finditer('RUNNING', string)]
     blobs = []
-    for idx in range(len(starts[:-1])):
-        blobs.append(string[starts[idx]:starts[idx + 1]])
+    for idx in range(len(starts)):
+        if idx is not len(starts) - 1:
+            s = string[starts[idx]:starts[idx + 1]]
+        else:
+            s = string[starts[idx]:]
+        blobs.append(s)
     return blobs
 
 
