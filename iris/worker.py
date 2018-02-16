@@ -63,12 +63,15 @@ class Worker(object):
             self.end()
             return
 
-        result = run_azimuthalzero_simulation(
-            truth=item,
-            solver=self.optmode,
-            solver_opts={'parallel': self.optparallel})
-        self.db.append(result)
-        self.q.mark_done()
+        try:
+            result = run_azimuthalzero_simulation(
+                truth=item,
+                solver=self.optmode,
+                solver_opts={'parallel': self.optparallel})
+            self.db.append(result)
+            self.q.mark_done()
+        except KeyError:
+            pass  # weird glitch inside of optimization, just skip this run, it will be immediately rerun
 
     def start(self):
         """Begin working and block."""
