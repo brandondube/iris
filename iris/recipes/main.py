@@ -135,6 +135,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
     pool = prep_globals(setup_data, sys_parameters, codex, parallel)
 
     parameter_histories = [[]]
+    global nbasinit
     nbasinit = 0
 
     def cb_global(x, f, accept):
