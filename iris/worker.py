@@ -7,14 +7,19 @@ from iris.macros import run_azimuthalzero_simulation
 class Worker(object):
     """A worker."""
 
-    def __init__(self, queue, database, work_time=None, work_jobs=None):
+    def __init__(self, queue, database, optmode='local', optparallel=False, work_time=None, work_jobs=None):
         """Create a new worker.
 
         Parameters
         ----------
         queue : `iris.data.PersistentQueue`
             a persistent queue object
-        database : `iris.
+        database : `iris.data.Database`
+            a database object
+        optmode : `str`, optional, {'local', 'global'}
+            optimization mode; local or global
+        optparallel : `bool`, optional
+            whether to use multithreaded optimization
         work_time : numeric, optional
             time to work for, minutes
         work_jobs : `int`, optional
@@ -40,6 +45,9 @@ class Worker(object):
             self.current_job = 0
             self.mode = 'jobs'
 
+        self.optmode = optmode
+        self.optparallel = optparallel
+
         self.q = queue
         self.db = database
         self.work_time = work_time
@@ -55,7 +63,10 @@ class Worker(object):
             self.end()
             return
 
-        result = run_azimuthalzero_simulation(truth=item)
+        result = run_azimuthalzero_simulation(
+            truth=item,
+            solver=self.optmode,
+            solver_opts={'parallel': self.optparallel})
         self.db.append(result)
         self.q.mark_done()
 
