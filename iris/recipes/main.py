@@ -19,7 +19,7 @@ OptSetup = namedtuple('OptSetup', ['focus_diversity', 't_true', 's_true', 'diffr
 
 
 def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                       parallel=False, core_opts=None):
+                       ftol=1e-2, parallel=False, core_opts=None):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
@@ -33,6 +33,8 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
         numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
     guess : iterable, optional
         guess coefficients for the wavefront
+    ftol : `float`
+        cost function tolerance
     parallel : `bool`, optional
         whether to run optimization in parallel.  Defaults to true
     core_otps: `tuple` or None, optional
@@ -75,7 +77,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
                 method='L-BFGS-B',
                 options={
                     'disp': True,
-                    'ftol': 1e-2,
+                    'ftol': ftol,
                 },
                 args=args,
                 callback=callback)
@@ -94,7 +96,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
 
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                             max_starts=25, parallel=False, core_opts=None):
+                             ftol=1e-2, max_starts=25, parallel=False, core_opts=None):
     """Pseudoglobal basin-hopping based optimization routine.
 
     Parameters
@@ -108,6 +110,8 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
     guess : iterable, optional
         guess coefficients for the wavefront
+    ftol : `float`
+        cost function tolerance
     max_starts : `int`
         maximum number of pseudorandom starting guesses to make
     parallel : `bool`, optional
@@ -136,11 +140,11 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
 
     parameter_histories = [[]]
     global nbasinit
-    nbasinit = 0
+    nbasinit = 1
 
     def cb_global(x, f, accept):
         global nbasinit  # declare nit as global
-        if f < 1e-2:     # if the cost function is small enough, declare success
+        if f < ftol:     # if the cost function is small enough, declare success
             return True
         elif nbasinit >= max_starts:  # if there have been the maximum number of starts, stop
             return True
@@ -148,7 +152,8 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         parameter_histories.append([])
 
     def cb_local(x):
-        parameter_histories[nbasinit].append(x.copy())
+        global nbasinit
+        parameter_histories[nbasinit - 1].append(x.copy())
 
     try:
         t_start = time.perf_counter()
@@ -165,7 +170,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                     'callback': cb_local,
                     'options': {
                         'disp': True,
-                        'ftol': 1e2,
+                        'ftol': ftol,
                     }},
                 callback=cb_global,
                 stepsize=0.05,
