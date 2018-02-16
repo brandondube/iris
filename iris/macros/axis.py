@@ -92,6 +92,7 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
                 p2 = config_codex_params_to_pupil(cfg, decoder_ring, coefs)
                 residuals[idx].append((pupil - p2).rms)
             residuals.append([])
+        del residuals[-1]  # clean up trailing list
 
     res = prepare_document(
         sim_params=cfg,
