@@ -28,7 +28,7 @@ DEFAULT_CONFIG = make_focus_range_realistic_number_of_microns(DEFAULT_CONFIG, 5)
 
 def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None,
                                  solver='local', decoder_ring=None,
-                                 solver_opts=None, core_opts=None,):
+                                 solver_opts=None, core_opts=None):
     """Run a complete simulation generating and retrieving azimuthal order zero terms.
 
     Parameters
