@@ -2,8 +2,12 @@
 from prysm.macros import thrufocus_mtf_from_wavefront, SimulationConfig
 from prysm.mathops import floor, sqrt
 
-from iris.utilities import make_focus_range_realistic_number_of_microns, prepare_document
-from iris.recipes import opt_routine
+from iris.utilities import (
+    make_focus_range_realistic_number_of_microns,
+    prepare_document_local,
+    prepare_document_global,
+)
+from iris.recipes import opt_routine_lbfgsb, opt_routine_basinhopping
 from iris.core import config_codex_params_to_pupil
 from iris.rings import W1, W2
 
@@ -23,8 +27,8 @@ DEFAULT_CONFIG = make_focus_range_realistic_number_of_microns(DEFAULT_CONFIG, 5)
 
 
 def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None,
-                                 solver=opt_routine, decoder_ring=None,
-                                 solver_opts=None, core_opts=None):
+                                 solver='local', decoder_ring=None,
+                                 solver_opts=None, core_opts=None,):
     """Run a complete simulation generating and retrieving azimuthal order zero terms.
 
     Parameters
@@ -35,8 +39,8 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
         guess coefficients, in waves RMS
     cfg : `prysm.macros.SimulationConfig`, optional
         simulation configuration; if None, use a built in default
-    solver : callable, optional
-        function to call to solve for wavefront coefficients
+    solver : `str`, optional
+        whether to use a local or a global optimizer
     decoder_ring : `dict`, optional
         a decoder ring, a dictionary that looks like {0: 'Z1', 1: 'Z2' ...}, if None defaults to
         W1 from iris/rings.py if guess is of length 4, and W2 if guess is of length 16
@@ -60,6 +64,11 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
         else:
             decoder_ring = W1
 
+    if solver.lower() == 'local':
+        solver, prepare_document, flag = opt_routine_lbfgsb, prepare_document_local, 'local'
+    else:
+        solver, prepare_document, flag = opt_routine_basinhopping, prepare_document_global, 'global'
+
     pupil = config_codex_params_to_pupil(cfg, decoder_ring, truth)
     truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
     if solver_opts is not None and core_opts is not None:
@@ -71,10 +80,18 @@ def run_azimuthalzero_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), c
     else:
         sim_result = solver(cfg, truth_df, decoder_ring, guess)
 
-    residuals = []
-    for coefs in sim_result.x_iter:
-        p2 = config_codex_params_to_pupil(cfg, decoder_ring, coefs)
-        residuals.append((pupil - p2).rms)
+    if flag == 'local':
+        residuals = []
+        for coefs in sim_result.x_iter:
+            p2 = config_codex_params_to_pupil(cfg, decoder_ring, coefs)
+            residuals.append((pupil - p2).rms)
+    else:
+        residuals = [[]]
+        for idx, iteration in enumerate(sim_result.x_iter):
+            for coefs in iteration:
+                p2 = config_codex_params_to_pupil(cfg, decoder_ring, coefs)
+                residuals[idx].append((pupil - p2).rms)
+            residuals.append([])
 
     res = prepare_document(
         sim_params=cfg,
