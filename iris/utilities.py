@@ -110,7 +110,7 @@ def parse_cost_by_iter_lbfgsb(string):
     return [float(s.replace('D', 'E')) for s in fortran_values]
 
 
-def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
+def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
         """Prepare a document (dict) for insertion into the results database.
 
         Parameters
@@ -157,6 +157,7 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter,
         """
         x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
         return {
+            'global': False,
             'sim_params': sim_params,
             'codex': codex,
             'truth_params': truth_params,
@@ -173,6 +174,83 @@ def prepare_document(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter,
             'time': t,
             'nit': optimization_result.nit,
             'nfev': optimization_result.nfev,
+            'nrandomstart': False,
+        }
+
+
+def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
+        """Prepare a document (dict) for insertion into the results database.
+
+        Parameters
+        ----------
+        sim_params : `dict`
+            dictionary with keys for efl, fno, wavelength, samples, focus_planes, focus_range_waves, freqs
+        codex : `dict`
+            dictionary with integer keys in [0, len(truth_params)] and values 'Z1'..'Z49'; each key
+                is a position in the parameter vector and each value is the appropriate zernike.
+        truth_parms: iterable
+            truth parameters
+        truth_rmswfe: `float`
+            RMS WFE of the truth
+        rmswfe_iter : iterable
+            rms wavefront error for each iteration
+        normed : `bool`
+            if the coefficients should be made unit RMS value
+        optimization_result : `object`
+            object with keys x, x_iter, fun, fun_iter, time
+
+        Returns
+        -------
+        `dict`
+            dictionary with keys, types:
+                  # not going on database
+                - sim_params, `~prysm.macro.SimulationConfig`
+                - codex, `dict`
+                - truth_params, `tuple`
+                - zernike_norm, `bool`
+                - result_iter, `list`
+                - cost_iter, `list`
+                - rrmswfe_iter, `list`
+                - result_final, `tuple`
+                  # going on database
+                - truth_rmswfe, `float`
+                - cost_first, `float`
+                - cost_final, `float`
+                - rrmswfe_first, `float`
+                - rrmswfe_final, `float`
+                - time, `float`
+                - nit, `int`
+                - nfev, `int`
+
+        Notes
+        -----
+        Similar to the _local variant, but sets the global attr to true and xxxx_iter attrs are
+        iterables of iterables, where each outer iterable corresponds to a local optimization
+        attempt.  i.e., for a situation where there were 3 random starting guesses with 10, 20 and
+        30 iterations, fun_iter will have len of 3, fun_iter[0] will have len of 10, and so on
+
+        """
+        x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
+        nstart = len(xiter)
+        return {
+            'global': True,
+            'sim_params': sim_params,
+            'codex': codex,
+            'truth_params': truth_params,
+            'zernike_normed': normed,
+            'result_iter': xiter,
+            'cost_iter': fiter,
+            'rrmswfe_iter': rmswfe_iter,
+            'result_final': x,
+            'truth_rmswfe': truth_rmswfe,
+            'cost_first': fiter[0],
+            'cost_final': f,
+            'rrmswfe_first': rmswfe_iter[0],
+            'rrmswfe_final': rmswfe_iter[-1],
+            'time': t,
+            'nit': optimization_result.nit,
+            'nfev': optimization_result.nfev,
+            'nrandomstart': nstart,
         }
 
 
