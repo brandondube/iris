@@ -5,11 +5,11 @@ from multiprocessing import Pool
 from collections import namedtuple
 
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, basinhopping
 
 from iris.core import prepare_globals, optfcn
 from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
-from iris.utilities import parse_cost_by_iter_lbfgsb
+from iris.utilities import parse_cost_by_iter_lbfgsb, split_lbfgsb_iters
 from iris.recipes.axis import grab_axial_data
 
 from prysm.otf import diffraction_limited_mtf
@@ -18,8 +18,8 @@ from prysm.otf import diffraction_limited_mtf
 OptSetup = namedtuple('OptSetup', ['focus_diversity', 't_true', 's_true', 'diffraction'])
 
 
-def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                parallel=False, core_opts=None):
+def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
+                       parallel=False, core_opts=None):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
@@ -95,7 +95,97 @@ def opt_routine(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
                              max_starts=25, parallel=False, core_opts=None):
-    pass
+    """Pseudoglobal basin-hopping based optimization routine.
+
+    Parameters
+    ----------
+    sys_parameters : `dict`
+        dictionary with keys efl, fno, wavelength, samples, focus_planes, focus_range_waves, freqs, freq_step
+    truth_dataframe : `pandas.DataFrame`
+        a dataframe containing truth values
+    codex : dict
+        dictionary of key, value pairs where keys are ints and values are strings.  Maps parameter
+        numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
+    guess : iterable, optional
+        guess coefficients for the wavefront
+    max_starts : `int`
+        maximum number of pseudorandom starting guesses to make
+    parallel : `bool`, optional
+        whether to run optimization in parallel.  Defaults to true
+    core_otps: `tuple` or None, optional
+        options to pass to the optimizaiton core
+
+    Returns
+    -------
+    `dict`
+        dictionary with keys, types:
+            - sim_params, dict
+            - codex, dict
+            - truth_params, tuple
+            - truth_rmswfe, float
+            - zernike_norm, bool
+            - result_final, tuple
+            - result_iter, list
+            - cost_final, float
+            - cost_iter, list
+            - time, float
+
+    """
+    setup_data = prep_data(sys_parameters, truth_dataframe)
+    pool = prep_globals(setup_data, sys_parameters, codex, parallel)
+
+    parameter_histories = [[]]
+    nbasinit = 0
+
+    def cb_global(x, f, accept):
+        global nbasinit  # declare nit as global
+        if f < 1e-2:     # if the cost function is small enough, declare success
+            return True
+        elif nbasinit >= max_starts:  # if there have been the maximum number of starts, stop
+            return True
+        nbasinit += 1    # if not, increment the counter and make a new parameter history list
+        parameter_histories.append([])
+
+    def cb_local(x):
+        parameter_histories[nbasinit].append(x.copy())
+
+    try:
+        t_start = time.perf_counter()
+        # do the optimization and capture the per-iteration information from stdout
+        with forcefully_redirect_stdout() as out:
+            if core_opts is None:
+                args = (None, None)
+            result = basinhopping(
+                func=optfcn,
+                x0=guess,
+                minimizer_kwargs={
+                    'args': args,
+                    'method': 'L-BFGS-B',
+                    'callback': cb_local,
+                    'options': {
+                        'disp': True,
+                        'ftol': 1e2,
+                    }},
+                callback=cb_global,
+                stepsize=0.05,
+                T=100,
+                interval=3,
+                seed=1234)
+
+        t_end = time.perf_counter()
+        txt = out['txt']
+
+        # grab the extra data and put everything on the optimizationresult
+        iter_outs = split_lbfgsb_iters(txt)
+        cost_iters = [parse_cost_by_iter_lbfgsb(txtbuffer) for txtbuffer in iter_outs]
+        result.x_iter = parameter_histories
+        result.fun_iter = cost_iters
+        result.time = t_end - t_start
+        return result
+    finally:
+        if pool is not None:
+            pool.close()
+            pool.join()
 
 
 def prep_data(sys_parameters, truth_df):
