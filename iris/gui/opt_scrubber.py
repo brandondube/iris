@@ -31,7 +31,7 @@ from iris.core import config_codex_params_to_pupil  # noqa
 
 root = Path(__file__).parent / '..' / '..' / '..' / 'simulations'
 
-data_location = root / 'results' / 'axis_sph_randomsearch_0pt3' / 'db' / '676fff2c-35f1-48f9-b61b-3ce30ffb89a2.pkl'
+data_location = root / 'results' / 'axis_sph_randomsearch_0pt3' / 'db' / '8818d618-dbd2-49ad-9587-737c5bb0bb53.pkl'
 
 with open(data_location, 'rb') as fid:
     opt_res = pickle.load(fid)

@@ -1,7 +1,6 @@
 """Main recipe."""
-import os
 import time
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from collections import namedtuple
 
 import numpy as np
@@ -19,7 +18,7 @@ OptSetup = namedtuple('OptSetup', ['focus_diversity', 't_true', 's_true', 'diffr
 
 
 def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                       ftol=1e-2, parallel=False, core_opts=None):
+                       ftol=1e-2, parallel=False, nthreads=None, core_opts=None):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
@@ -37,6 +36,8 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
         cost function tolerance
     parallel : `bool`, optional
         whether to run optimization in parallel.  Defaults to true
+    nthreads : `int`, optional
+        number of threads to use for parallel optimization; if None, defaults to number of logical threads - 1
     core_otps: `tuple` or None, optional
         options to pass to the optimizaiton core
 
@@ -96,7 +97,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
 
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                             ftol=1e-2, max_starts=25, parallel=False, core_opts=None):
+                             ftol=1e-2, max_starts=25, parallel=False, nthreads=None, core_opts=None):
     """Pseudoglobal basin-hopping based optimization routine.
 
     Parameters
@@ -116,6 +117,8 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         maximum number of pseudorandom starting guesses to make
     parallel : `bool`, optional
         whether to run optimization in parallel.  Defaults to true
+    nthreads : `int`, optional
+        number of threads to use for parallel optimization; if None, defaults to number of logical threads - 1
     core_otps: `tuple` or None, optional
         options to pass to the optimizaiton core
 
@@ -227,7 +230,7 @@ def prep_data(sys_parameters, truth_df):
         diffraction=diffraction)
 
 
-def prep_globals(setup_data, setup_parameters, codex, parallel):
+def prep_globals(setup_data, setup_parameters, codex, parallel, nthreads):
     """Prepare the global variables used in the optimimzation routine.
 
     Parameters
@@ -241,6 +244,8 @@ def prep_globals(setup_data, setup_parameters, codex, parallel):
         numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
     parallel : `bool`
         whether the optimization is parallel or not
+    nthreads : `int`, optional
+        number of threads to use for parallel optimization; if None, defaults to number of logical threads - 1
 
     Returns
     -------
@@ -258,7 +263,11 @@ def prep_globals(setup_data, setup_parameters, codex, parallel):
         'diffraction': setup_data.diffraction,
     }
     if parallel is True:
-        pool = Pool(processes=os.cpu_count() - 1, initializer=prepare_globals, initargs=[_globals])
+        if nthreads is None:
+            nproc = cpu_count() - 1
+        else:
+            nproc = nthreads
+        pool = Pool(processes=nproc, initializer=prepare_globals, initargs=[_globals])
     else:
         pool = None
     prepare_globals({**_globals, 'pool': pool})
