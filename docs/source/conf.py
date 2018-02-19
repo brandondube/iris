@@ -3,7 +3,7 @@
 """Documentation configuration for iris."""
 import guzzle_sphinx_theme
 
-ver = '0.0.12'
+ver = '0.0.17'
 
 # -- General configuration ------------------------------------------------
 

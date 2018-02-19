@@ -1,7 +1,7 @@
 """Macros related to my senior thesis."""
 
-from iris.macros.axis import run_azimuthalzero_simulation
+from iris.macros.main import run_simulation
 
 __all__ = [
-    'run_azimuthalzero_simulation',
+    'run_simulation_simulation',
 ]

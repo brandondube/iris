@@ -1,7 +1,7 @@
 """A worker that works for a period of time or number of jobs."""
 import time
 
-from iris.macros import run_azimuthalzero_simulation
+from iris.macros import run_simulation
 
 
 class Worker(object):
