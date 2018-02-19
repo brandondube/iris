@@ -3,5 +3,5 @@
 from iris.macros.main import run_simulation
 
 __all__ = [
-    'run_simulation_simulation',
+    'run_simulation',
 ]

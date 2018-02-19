@@ -67,7 +67,7 @@ class Worker(object):
             return
 
         try:
-            result = run_azimuthalzero_simulation(
+            result = run_simulation(
                 truth=item,
                 solver=self.optmode,
                 solver_opts={'parallel': self.optparallel, 'nthreads': self.optthreads})
