@@ -30,21 +30,25 @@ class PersistentQueue(deque):
 
     """
 
-    def __init__(self, path):
+    def __init__(self, path, overwrite=False):
         """Create a new PersistentQueue.
 
         Parameters
         ----------
-        path : str
-            where to persist the queue too.
+        path : `str`
+            where to persist the queue too
+        overwrite : `bool`, optional
 
         """
         self.path = path
         self.data_root.parent.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
-        try:
-            with open(self.path, mode='rb') as file:
-                self.q = pickle.load(file)
-        except (FileNotFoundError, IOError):
+        if not overwrite:
+            try:
+                with open(self.path, mode='rb') as file:
+                    self.q = pickle.load(file)
+            except (FileNotFoundError, IOError):
+                self.q = deque()
+        else:
             self.q = deque()
 
     def persist(self):
