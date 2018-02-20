@@ -41,7 +41,7 @@ class PersistentQueue(deque):
 
         """
         self.path = path
-        self.data_root.parent.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
+        self.path.parent.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
         if not overwrite:
             try:
                 with open(self.path, mode='rb') as file:
