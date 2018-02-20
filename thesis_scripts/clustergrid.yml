@@ -1,0 +1,12 @@
+root: ~/thesis/workdir/data
+names:
+  - diffraction_euclidian
+  - ____________euclidian
+  - diffraction_manhattan
+  - ____________manhattan
+chunks:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
