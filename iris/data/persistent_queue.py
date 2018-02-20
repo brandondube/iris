@@ -40,6 +40,7 @@ class PersistentQueue(deque):
 
         """
         self.path = path
+        self.data_root.parent.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
         try:
             with open(self.path, mode='rb') as file:
                 self.q = pickle.load(file)
