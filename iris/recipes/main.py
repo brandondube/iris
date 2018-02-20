@@ -58,7 +58,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
 
     """
     setup_data = prep_data(sys_parameters, truth_dataframe)
-    pool = prep_globals(setup_data, sys_parameters, codex, parallel)
+    pool = prep_globals(setup_data, sys_parameters, codex, parallel, nthreads)
 
     parameter_vectors = []
 
@@ -139,7 +139,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
 
     """
     setup_data = prep_data(sys_parameters, truth_dataframe)
-    pool = prep_globals(setup_data, sys_parameters, codex, parallel)
+    pool = prep_globals(setup_data, sys_parameters, codex, parallel, nthreads)
 
     parameter_histories = [[]]
     global nbasinit
@@ -177,8 +177,8 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                     }},
                 callback=cb_global,
                 stepsize=0.05,
-                T=100,
-                interval=3,
+                T=75,
+                interval=2,
                 seed=1234)
 
         t_end = time.perf_counter()
