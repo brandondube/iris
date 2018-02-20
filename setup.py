@@ -10,7 +10,7 @@ setup(
     author='Brandon Dube',
     author_email='brandondube@gmail.com',
     packages=['iris'],
-    install_requires=['numpy', 'matplotlib', 'scipy', 'prysm', 'pandas'],
+    install_requires=['numpy', 'matplotlib', 'scipy', 'prysm', 'pandas', 'pyyaml'],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
