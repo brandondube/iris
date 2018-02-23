@@ -1,7 +1,7 @@
 root: ~/thesis/workdir/data
 names:
-  - diffraction_euclidian
-  - ____________euclidian
+  - diffraction_sumsquarediff
+  - ____________sumsquarediff
   - diffraction_manhattan
   - ____________manhattan
 chunks:
