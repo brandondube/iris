@@ -7,7 +7,7 @@ from iris.macros import run_simulation
 class Worker(object):
     """A worker."""
 
-    def __init__(self, queue, database, optmode='local', optparallel=False, optnumthreads=None, work_time=None, work_jobs=None):
+    def __init__(self, queue, database, optmode='local', optopts=None, optcoreopts=None, work_time=None, work_jobs=None):
         """Create a new worker.
 
         Parameters
@@ -18,10 +18,10 @@ class Worker(object):
             a database object
         optmode : `str`, optional, {'local', 'global'}
             optimization mode; local or global
-        optparallel : `bool`, optional
-            whether to use multithreaded optimization
-        optnumthreads : `int`, optional
-        number of threads to use for parallel optimization; if None, defaults to number of logical threads - 1
+        optopts : `dict`, optional
+            options passed to the optimiser
+        optcoreopts : `dict`, optional
+            options passed to the core of the optimizer
         work_time : numeric, optional
             time to work for, minutes
         work_jobs : `int`, optional
@@ -48,8 +48,8 @@ class Worker(object):
             self.mode = 'jobs'
 
         self.optmode = optmode
-        self.optparallel = optparallel
-        self.optthreads = optnumthreads
+        self.optopts = optopts
+        self.optcoreopts = optcoreopts
 
         self.q = queue
         self.db = database
@@ -70,7 +70,8 @@ class Worker(object):
             result = run_simulation(
                 truth=item,
                 solver=self.optmode,
-                solver_opts={'parallel': self.optparallel, 'nthreads': self.optthreads})
+                solver_opts=self.optopts,
+                core_opts=self.optcoreopts)
             self.db.append(result)
             self.q.mark_done()
         except KeyError:
