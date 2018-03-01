@@ -205,7 +205,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         # grab the extra data and put everything on the optimizationresult
         iter_outs = split_lbfgsb_iters(txt)
         cost_iters = [parse_cost_by_iter_lbfgsb(txtbuffer) for txtbuffer in iter_outs]
-        parameter_histories = cost_buffer_string_to_parameter_histories(cost_buffer.getvalue(), cost_iters)
+        parameter_histories = cost_buffer_string_to_parameter_histories(cost_buffer.getvalue(), parameters, cost_iters)
         result.x_iter = parameter_histories
         result.fun_iter = cost_iters
         result.time = t_end - t_start
