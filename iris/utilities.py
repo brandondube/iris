@@ -110,6 +110,45 @@ def parse_cost_by_iter_lbfgsb(string):
     return [float(s.replace('D', 'E')) for s in fortran_values]
 
 
+def cost_buffer_string_to_parameter_histories(string, cost_iters):
+    """Extract parameter history from a buffer printed by the cost function.
+
+    Uses L-BFGS-B buffer-scraped cost function values to find correct values.
+
+    Parameters
+    ----------
+    string : `str`
+        a string
+    cost_iters : iterable of iterables
+        ragged "2D" iterable set filled with cost function histories
+
+    Returns
+    -------
+    `list`
+        list of parameter trajectories
+
+    Notes
+    -----
+    This may be the most fragile algorithm ever written.
+
+    """
+    split = [s.split(' | ') for s in string.splitlines()]
+    params = [s[0] for s in split]
+    allcosts = np.asarray([float(s[1]) for s in split])
+
+    out_chunks = []
+    for cost_chunk in cost_iters:
+        param_chunk = []
+        for target_value in cost_chunk:
+            tmp_arr = abs(allcosts - target_value)
+            idx = np.argmin(tmp_arr)
+            param_chunk.append(params[idx])
+        out_chunks.append(param_chunk)
+        allcosts = allcosts[idx:]
+        params = params[idx:]
+    return out_chunks
+
+
 def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
         """Prepare a document (dict) for insertion into the results database.
 
