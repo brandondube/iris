@@ -73,6 +73,8 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
         with forcefully_redirect_stdout() as out:
             if core_opts is None:
                 args = (None, None)
+            else:
+                args = core_opts
             result = minimize(
                 fun=optfcn,
                 x0=guess,
@@ -142,7 +144,6 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
     setup_data = prep_data(sys_parameters, truth_dataframe)
     pool = prep_globals(setup_data, sys_parameters, codex, parallel, nthreads)
 
-    parameter_histories = [[]]
     global nbasinit
     nbasinit = 1
 
@@ -153,15 +154,12 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         elif nbasinit >= max_starts:  # if there have been the maximum number of starts, stop
             return True
         nbasinit += 1    # if not, increment the counter and make a new parameter history list
-        parameter_histories.append([])
-
-    def cb_local(x):
-        global nbasinit
-        parameter_histories[nbasinit - 1].append(x.copy())
 
     cost_buffer = io.StringIO()
     if core_opts is None:
         args = (None, None)
+    else:
+        args = core_opts
 
     # the intention is to write the floats out to a string in the same format as
     # fortran, praying that along the way they have exactly the same roundoff
@@ -188,12 +186,10 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                 minimizer_kwargs={
                     'args': args,
                     'method': 'L-BFGS-B',
-                    'callback': cb_local,
                     'options': {
                         'disp': True,
                         'ftol': ftol,
                     }},
-                callback=cb_global,
                 stepsize=0.05,
                 T=75,
                 interval=2,
