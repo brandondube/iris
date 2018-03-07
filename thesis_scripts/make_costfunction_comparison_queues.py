@@ -5,9 +5,9 @@ import numpy as np
 from iris.data import PersistentQueue
 
 # folders for each queue
-root = Path(__file__).parent / 'data' / 'cost_function_comparison'
-stem1 = root / 'diffraction_euclidian'
-stem2 = root / '____________euclidian'
+root = Path(__file__).parent / 'data' / 'cost-function-design'
+stem1 = root / 'diffraction_sumsquarediff'
+stem2 = root / '____________sumsquarediff'
 stem3 = root / 'diffraction_manhattan'
 stem4 = root / '____________manhattan'
 stems = (stem1, stem2, stem3, stem4)
