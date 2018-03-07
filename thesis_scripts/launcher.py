@@ -38,8 +38,7 @@ else:
 
 # shield for multiprocessing
 if __name__ == '__main__':
-    root = Path(cfg['root'])
-    root.mkdir(parents=True, exist_ok=True)
+    root = Path(cfg['root']).expanduser()
     base = root / target[0] / target[1]
     q = PersistentQueue(base / 'queue.pkl')
     db = Database(base)
