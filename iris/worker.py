@@ -75,7 +75,8 @@ class Worker(object):
                 core_opts=self.optcoreopts)
             self.db.append(self.last_result)
             self.q.mark_done()
-        except KeyError:
+        except KeyError as e:
+            print(e)
             pass  # weird glitch inside of optimization, just skip this run, it will be immediately rerun
 
     def start(self):
