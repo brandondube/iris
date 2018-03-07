@@ -44,7 +44,7 @@ class Database(object):
                     shutil.rmtree(self.data_root)
                     os.remove(self.csvpath)
             if 'id' in fields:
-                raise ValueError('cannot use ID as a field')
+                raise ValueError('cannot use id as a field')
             self.fields = tuple(fields)
             self.df = pd.DataFrame(columns=(*fields, 'id'))
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
