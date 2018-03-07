@@ -258,6 +258,7 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
                 - rrmswfe_first, `float`
                 - rrmswfe_final, `float`
                 - time, `float`
+                - nit, `int`
 
         Notes
         -----
@@ -281,6 +282,8 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
             rrmswfe_first = rmswfe_iter[0][0]
             rrmswfe_final = rmswfe_iter[-1][-1]
             cost_first = fiter[0][0]
+
+        nit = sum([len(i) for i in rmswfe_iter])
         return {
             'global': True,
             'sim_params': sim_params,
@@ -298,6 +301,7 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
             'rrmswfe_final': rrmswfe_final,
             'time': t,
             'nrandomstart': nstart,
+            'nit': nit,
         }
 
 
