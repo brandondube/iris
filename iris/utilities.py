@@ -258,8 +258,6 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
                 - rrmswfe_first, `float`
                 - rrmswfe_final, `float`
                 - time, `float`
-                - nit, `int`
-                - nfev, `int`
 
         Notes
         -----
@@ -270,7 +268,19 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
 
         """
         x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
-        nstart = len(xiter)
+        if type(xiter[0]) is not list:  # only one trial
+            nstart = 1
+            rrmswfe_first = rmswfe_iter[0]
+            rrmswfe_final = rmswfe_iter[-1]
+            cost_first = fiter[0]
+            xiter = [xiter]  # everything is wrapped in a list so that it
+            fiter = [fiter]  # is a nested iterable as expected
+            rmswfe_iter = [rmswfe_iter]
+        else:  # multiple trials
+            nstart = len(xiter)
+            rrmswfe_first = rmswfe_iter[0][0]
+            rrmswfe_final = rmswfe_iter[-1][-1]
+            cost_first = fiter[0][0]
         return {
             'global': True,
             'sim_params': sim_params,
@@ -282,13 +292,11 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
             'rrmswfe_iter': rmswfe_iter,
             'result_final': x,
             'truth_rmswfe': truth_rmswfe,
-            'cost_first': fiter[0][0],
+            'cost_first': cost_first,
             'cost_final': f,
-            'rrmswfe_first': rmswfe_iter[0][0],
-            'rrmswfe_final': rmswfe_iter[-1][-1],
+            'rrmswfe_first': rrmswfe_first,
+            'rrmswfe_final': rrmswfe_final,
             'time': t,
-            'nit': optimization_result.nit,
-            'nfev': optimization_result.nfev,
             'nrandomstart': nstart,
         }
 
