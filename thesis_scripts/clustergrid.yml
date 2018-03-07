@@ -1,4 +1,4 @@
-root: ~/thesis/workdir/data
+root: ~/thesis/workdir/data/cost-function-design
 names:
   - diffraction_sumsquarediff
   - ____________sumsquarediff
