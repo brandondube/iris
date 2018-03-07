@@ -190,6 +190,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                         'disp': True,
                         'ftol': ftol,
                     }},
+                callback=cb_global,
                 stepsize=0.05,
                 T=75,
                 interval=2,
