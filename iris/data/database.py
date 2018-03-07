@@ -37,7 +37,7 @@ class Database(object):
             self.fields = None
             self._load_from_disk()
         else:  # if not, create from scratch or raise if there is a db at the path and overwrite=False
-            if os.path.isfile(self.csvpath):
+            if self.csvpath.is_file():
                 if not overwrite:
                     raise IOError('There is an existing database at this location.  Delete it, or use overwrite=True.')
                 else:
