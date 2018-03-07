@@ -1,5 +1,6 @@
 """A queue object that persists to disk as a pickle with each operation."""
 import pickle
+from pathlib import Path
 from collections import deque
 
 
@@ -40,8 +41,8 @@ class PersistentQueue(deque):
         overwrite : `bool`, optional
 
         """
-        self.path = path
-        self.path.parent.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
+        self.path = Path(path)
+        self.path.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
         if not overwrite:
             try:
                 with open(self.path, mode='rb') as file:
