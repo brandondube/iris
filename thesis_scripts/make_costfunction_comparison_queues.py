@@ -17,7 +17,7 @@ for stem in stems:
     for i in range(5):
         p = stem / str(counter)
         p.mkdir(parents=True, exist_ok=True)
-        local.append(PersistentQueue(p / 'queue.pkl', overwrite=True)
+        local.append(PersistentQueue(p / 'queue.pkl', overwrite=True))
         counter += 1
     qs.append(local)
 

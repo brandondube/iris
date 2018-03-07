@@ -40,7 +40,7 @@ else:
 if __name__ == '__main__':
     root = Path(cfg['root'])
     root.mkdir(parents=True, exist_ok=True)
-    base = root / target[0] / target[1])
+    base = root / target[0] / target[1]
     q = PersistentQueue(base / 'queue.pkl')
     db = Database(base)
     w = Worker(q, db, optmode='global', optopts={'parallel': True, 'nthreads': 23}, work_time=60 * 7)
