@@ -28,7 +28,7 @@ class Database(object):
         if fields is provided and a db exists at the given path already, an exception will be raised
 
         """
-        self.path = Path(path)
+        self.path = Path(path).resolve()
         self.data_root = self.path / 'db'
         self.csvpath = self.path / 'index.csv'
 

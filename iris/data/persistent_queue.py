@@ -41,7 +41,7 @@ class PersistentQueue(deque):
         overwrite : `bool`, optional
 
         """
-        self.path = Path(path)
+        self.path = Path(path).resolve()
         p = self.path.parent
         p.mkdir(parents=True, exist_ok=True)  # ensure queue folders exist
         if not overwrite:
