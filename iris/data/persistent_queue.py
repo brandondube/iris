@@ -23,10 +23,10 @@ class PersistentQueue(deque):
 
     Attributes
     ----------
-    path : Path
-    path on disk of the queue
-    q : deque
-    double ended queue object
+    path : `pathlib.Path`
+        path on disk of the queue
+    q : `collections.deque`
+        double ended queue object
 
     """
 
