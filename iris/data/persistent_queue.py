@@ -90,8 +90,9 @@ class PersistentQueue(deque):
             leftmost item in queue
 
         """
-        return self.q.popleft()
+        item = self.q.popleft()
         self.persist()
+        return item
 
     def peek(self):
         """Return the leftmost item on the queue without removing it.
@@ -102,9 +103,7 @@ class PersistentQueue(deque):
             leftmost item in queue
 
         """
-        item = self.q.popleft()
-        self.q.appendleft(item)
-        return item
+        return self.q[0]
 
     def mark_done(self):
         """Remove the leftmost item from the queue."""
