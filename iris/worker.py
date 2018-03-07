@@ -56,6 +56,7 @@ class Worker(object):
         self.work_time = work_time
         self.work_jobs = work_jobs
         self.status = 'stopped'
+        self.last_result = None
 
     def do_job(self):
         """Do a job."""
@@ -67,12 +68,12 @@ class Worker(object):
             return
 
         try:
-            result = run_simulation(
+            self.last_result = run_simulation(
                 truth=item,
                 solver=self.optmode,
                 solver_opts=self.optopts,
                 core_opts=self.optcoreopts)
-            self.db.append(result)
+            self.db.append(self.last_result)
             self.q.mark_done()
         except KeyError:
             pass  # weird glitch inside of optimization, just skip this run, it will be immediately rerun
