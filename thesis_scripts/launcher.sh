@@ -5,7 +5,7 @@
 #SBATCH -t 0-07:59:59
 #SBATCH -n 1
 #SBATCH -c 24
-#SBATCH -a 1-20
+#SBATCH -a 0-19
 #SBATCH --mail-type=all
 module load anaconda/5.0.1c
 source deactivate
