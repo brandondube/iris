@@ -7,7 +7,4 @@
 #SBATCH -c 24
 #SBATCH -a 0-19
 #SBATCH --mail-type=all
-module load anaconda/5.0.1c
-source deactivate
-source activate thesis
 python -OO launcher.py clustergrid.yml $SLURM_ARRAY_TASK_ID
