@@ -105,7 +105,7 @@ class Database(object):
         return doc
 
     def update_document(self, id_, document):
-        """Replace a document in the database
+        """Replace a document in the database.
 
         Parameters
         ----------
@@ -140,6 +140,8 @@ def merge_databases(dbs, to):
     """
     out_root = Path(to)
     out_cproot = out_root / 'db'
+    shutil.rmtree(out_cproot)
+    out_cproot.mkdir(parents=True, exist_ok=True)
 
     dfs = []
     for db in dbs:
