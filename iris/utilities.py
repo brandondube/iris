@@ -305,6 +305,33 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
         }
 
 
+def correct_global_document(document):
+    """Correct error in the residual RMS WFE of a document
+
+    Parameters
+    ----------
+    document: `dict`
+        document prepared by prepare_document_global
+
+    Returns
+    -------
+    `dict`
+        updated ducument
+
+    """
+    output = document.copy()
+    rrmswfe, cost = document['rrmswfe_iter'], document['cost_iter']
+    o_idx, i_idx = 0, 0
+    lowest_cost = 1e99
+    for idx1, iterable in enumerate(cost):
+        for idx2, item in enumerate(iterable):
+            if item < lowest_cost:
+                o_idx, i_idx = idx1, idx2
+                lowest_cost = item
+    output['rrmswfe_final'] = rrmswfe[o_idx][i_idx]
+    return output    
+
+
 def pgm_img_to_array(imgstr):
     """Convert a string version of an ASCII pgm file to a numpy array.
 
