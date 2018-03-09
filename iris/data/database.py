@@ -104,16 +104,31 @@ class Database(object):
             doc = pickle.load(fid)
         return doc
 
+    def update_document(self, id_, document):
+        """Replace a document in the database
+
+        Parameters
+        ----------
+        id: `str`
+            string document id
+        document: `dict`
+            document sans id
+        
+        """
+        idx = self.df.id == id_
+        d = document.copy()
+        d['id'] = self.df.loc[idx].id
+        self.df.loc[idx] = d
+        with open(self.data_root / f'{id_}.pkl', 'wb') as fid:
+            pickle.dump(d, fid)
 
 def merge_databases(dbs, to):
     """Merge the databases in dbs to the output path, to.
 
     Parameters
     ----------
-
     dbs: iterable of `Database`s
         set of databases to merge into the output db
-    
     to: path_like
         where to put the output database
     
