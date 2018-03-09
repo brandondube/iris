@@ -66,7 +66,7 @@ class Database(object):
         """Write the dataframe to disk."""
         self.df.to_csv(self.csvpath, index=False)
 
-    def make_row(document):
+    def make_row(self, document):
         """Create a dictionary representing the row of corresponding to a document.
 
         Parameters
@@ -132,14 +132,12 @@ class Database(object):
             document sans id
         
         """
-        idx = self.df.loc[self.df.id == id_].index.values
-        print(idx)
-        d = document.copy()
-        id__ = self.df.loc[idx].id
-        d['id'] = self.df.loc[idx].id.values[0]
-        self.df.loc[idx] = d
+        idx = self.df.loc[self.df.id == id_].index.values[0]
+        d = self.make_row(document)
+        d['id'] = id_
+        self.df.iloc[idx, :] = d.values()
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:
-            pickle.dump(d, fid)
+            pickle.dump(document, fid)
 
 def merge_databases(dbs, to):
     """Merge the databases in dbs to the output path, to.
