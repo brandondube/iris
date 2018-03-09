@@ -1,5 +1,6 @@
 """Tools for plotting the results of wavefront sensing."""
 import numpy as np
+from scipy.stats import gaussian_kde
 from matplotlib import pyplot as plt
 
 from prysm.util import share_fig_ax
@@ -228,4 +229,50 @@ def plot_2d_optframe(data, max_freq=None, focus_range=None, focus_unit=r'$\mu m$
         ax.set(xlim=(0, max_freq), xlabel='Spatial Frequency [cy/mm]',
                ylim=(-focus_range, focus_range), ylabel=f'Focus [{focus_unit}]')
 
+    return fig, ax
+
+
+def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below=True, fig=None, ax=None):
+    """Create a Kernel Density Estimation based 'histogram' on a logarithmic x axis.
+
+    Parameters
+    ----------
+    data: `numpy.ndarray`
+        data to plot
+    xlim: iterable of length 2
+        lower and upper x limits to plot
+    num_pts: `int`, optional
+        number of points to sample along x axis
+    shade: `bool`, optional
+        whether to shade the area under the curve
+    bw_method: `str` or `float`, optional
+        passed to `scipy.stats.gaussian_kde` to set the bandwidth during estimation
+    gridlines_below: `bool`
+        whether to set axis gridlines to be below the graphics
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`:
+        Axis containing the plot
+        
+    """
+    d = np.log10(data)
+    kde = gaussian_kde(d, bw_method)
+    xpts = np.linspace(np.log10(xlim[0]), np.log10(xlim[1]), num_pts)  # in transformed space
+    data = kde(xpts)
+    real_xpts = 10 ** xpts
+
+    fig, ax = share_fig_ax(fig, ax)
+    if shade is True:
+        z = np.zeros(real_xpts.shape)
+        ax.fill_between(real_xpts, data, z)
+    ax.plot(real_xpts, data)
+    ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]', xscale='log',
+           ylim=(0, None), ylabel='Probability [Rel. 1.0]', axisbelow=gridlines_below)
     return fig, ax
