@@ -306,7 +306,7 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
 
 
 def correct_global_document(document):
-    """Correct error in the residual RMS WFE of a document
+    """Correct error in the residual RMS WFE of a document.
 
     Parameters
     ----------
