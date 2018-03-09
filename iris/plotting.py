@@ -260,7 +260,7 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
         Figure containing the plot
     ax : `matplotlib.axes.Axis`:
         Axis containing the plot
-        
+
     """
     d = np.log10(data)
     kde = gaussian_kde(d, bw_method)
@@ -274,5 +274,5 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
         ax.fill_between(real_xpts, data, z)
     ax.plot(real_xpts, data)
     ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]', xscale='log',
-           ylim=(0, None), ylabel='Probability [Rel. 1.0]', axisbelow=gridlines_below)
+           ylim=(0, None), ylabel='Probability Density', axisbelow=gridlines_below)
     return fig, ax
