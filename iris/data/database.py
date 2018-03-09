@@ -73,7 +73,7 @@ class Database(object):
         ----------
         document: `dict`
             a document about to be inserted into the database.
-        
+
         Returns
         -------
         `dict`
@@ -130,12 +130,16 @@ class Database(object):
             string document id
         document: `dict`
             document sans id
-        
+
         """
         idx = self.df.loc[self.df.id == id_].index.values[0]
         d = self.make_row(document)
         d['id'] = id_
-        self.df.iloc[idx, :] = d.values()
+        insertion_list = []
+        for key in self.fields:
+            insertion_list.append(d[key])
+        insertion_list.append(id_)
+        self.df.iloc[idx, :] = insertion_list
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:
             pickle.dump(document, fid)
 
@@ -148,12 +152,12 @@ def merge_databases(dbs, to):
         set of databases to merge into the output db
     to: path_like
         where to put the output database
-    
+
     Returns
     -------
     `Database`
         new database object that contains all elements from the component dbs
-    
+
     """
     out_root = Path(to)
     out_cproot = out_root / 'db'
@@ -168,7 +172,7 @@ def merge_databases(dbs, to):
             str_ = f'{id_}.pkl'
             in_path = db.path / 'db' / str_
             shutil.copy2(in_path, out_cproot)
-    
+
     out_df = pd.concat(dfs)
     out_df.to_csv(out_root / 'index.csv', index=False)
     return Database(to)
