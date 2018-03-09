@@ -66,6 +66,27 @@ class Database(object):
         """Write the dataframe to disk."""
         self.df.to_csv(self.csvpath, index=False)
 
+    def make_row(document):
+        """Create a dictionary representing the row of corresponding to a document.
+
+        Parameters
+        ----------
+        document: `dict`
+            a document about to be inserted into the database.
+        
+        Returns
+        -------
+        `dict`
+            row dictionary
+
+        """
+        id_ = str(uuid.uuid4())  # get a unique ID for the document
+        row_item = {'id': id_}
+        for field in self.fields:  # build the dataframe row
+            row_item[field] = document[field]
+
+        return row_item
+
     def append(self, document):
         """Append a document to the database.
 
@@ -75,11 +96,7 @@ class Database(object):
             a dictionary with several fields
 
         """
-        id_ = str(uuid.uuid4())  # get a unique ID for the document
-        row_item = {'id': id_}
-        for field in self.fields:  # build the dataframe row
-            row_item[field] = document[field]
-
+        row_item = self.make_row(document)
         self.df = self.df.append(row_item, ignore_index=True)  # assign to df, does not modifiy in-place
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
@@ -115,9 +132,11 @@ class Database(object):
             document sans id
         
         """
-        idx = self.df.id == id_
+        idx = self.df.loc[self.df.id == id_].index.values
+        print(idx)
         d = document.copy()
-        d['id'] = self.df.loc[idx].id
+        id__ = self.df.loc[idx].id
+        d['id'] = self.df.loc[idx].id.values[0]
         self.df.loc[idx] = d
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:
             pickle.dump(d, fid)
