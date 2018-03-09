@@ -103,3 +103,38 @@ class Database(object):
         with open(self.data_root / f'{id_}.pkl', 'rb') as fid:
             doc = pickle.load(fid)
         return doc
+
+
+def merge_databases(dbs, to):
+    """Merge the databases in dbs to the output path, to.
+
+    Parameters
+    ----------
+
+    dbs: iterable of `Database`s
+        set of databases to merge into the output db
+    
+    to: path_like
+        where to put the output database
+    
+    Returns
+    -------
+    `Database`
+        new database object that contains all elements from the component dbs
+    
+    """
+    out_root = Path(to)
+    out_cproot = out_root / 'db'
+
+    dfs = []
+    for db in dbs:
+        dfs.append(db.df)
+        ids = db.df['id']
+        for id_ in ids:
+            str_ = f'{id_}.pkl'
+            in_path = db.path / 'db' / str_
+            shutil.copy2(in_path, out_cproot)
+    
+    out_df = pd.concat(dfs)
+    out_df.to_csv(out_root / 'index.csv', index=False)
+    return Database(to)
