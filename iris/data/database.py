@@ -143,6 +143,7 @@ class Database(object):
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:
             pickle.dump(document, fid)
 
+
 def merge_databases(dbs, to):
     """Merge the databases in dbs to the output path, to.
 
