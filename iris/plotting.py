@@ -1,153 +1,69 @@
 """Tools for plotting the results of wavefront sensing."""
 import numpy as np
 from scipy.stats import gaussian_kde
-from matplotlib import pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 from prysm.util import share_fig_ax
 
 
-def single_solve_triple(result_document, log=False, fig=None, axs=None):
-    """Plot a quadchart for a single solve, giving full diagnostic information into the result.
+def _plot_attribute_global(nested_iterable, ax):
+    xmin = 0
+    for iteration in nested_iterable:
+        len_ = len(iteration)
+        x = range(xmin, xmin + len_)
+        ax.plot(x, iteration)
+        xmin += len_
+
+    ax.xaxis.set_major_formatter(ScalarFormatter())
+
+
+def plot_costfunction_history_global(document, fig=None, ax=None):
+    """Plot the cost function history of a global optimization run.
 
     Parameters
     ----------
-    result_document : `dict`
-        `dict` optimization result including initial values
-    log : bool, optional
-        whether to use a logarithmic scale
+    document : `dict`
+        document produced by utilities.prepare_document_global
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     Returns
     -------
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     """
-    if log is False:
-        scale = 'linear'
-    else:
-        scale = 'log'
-
-    # pull the relevant data
-    rd = result_document
-    params, cost, rmswfe = rd['result_iter'], rd['cost_iter'], rd['rmswfe_iter']
-    iters = list(range(len(params)))
-    params = np.asarray(params)
-    p_shape = params.shape
-
-    # prepare the plot
-    fig, axs = plt.subplots(ncols=3, sharex=True, figsize=(12, 4))
-
-    # get the parameter names
-    names = list(rd['codex'].values())
-    truths = rd['truth_params']
-    for i, name, truth in zip(range(p_shape[1]), names, truths):
-        line, = axs[0].plot(iters, params[:, i], label=f'{name} : {truth}')
-        axs[0].scatter(iters[-1], truth, c=line.get_color(), linewidths=3)
-
-    axs[0].legend()
-    axs[0].set(xlabel='Iteration [-]',
-               ylabel=r'Zernike Weight [$\lambda$ RMS]',
-               title='Parameters')
-
-    axs[1].plot(iters, cost)
-    axs[1].set(xlabel='Iteration [-]',
-               ylabel='Value [-]',
-               yscale=scale,
-               title='Cost Function',)
-
-    axs[2].plot(iters, rmswfe)
-    axs[2].set(xlabel='Iteration [-]',
-               ylabel=r'Residual RMS WFE [$\lambda$]',
-               yscale=scale,
-               title='RMS WFE')
-
-    fig.tight_layout()
-    return fig, axs
-
-
-def single_solve_paper(result_document, fig=None, axs=None):
-    """Plot the convergence of parameters on a symmetric log scale.
-
-    Parameters
-    ----------
-    result_document : `dict`
-        `dict` optimization result including initial values
-    fig : `matplotlib.figure.Figure`
-        Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
-        Axis containing the plot
-
-
-    Returns
-    -------
-    fig : `matplotlib.figure.Figure`
-        Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
-        Axis containing the plot
-
-    """
-    rd = result_document
-    truth = rd['truth_zernike']
-    truths = np.asarray(list(truth.values()), dtype=np.float64)
-    params, rmswfe = rd['x_iter'], rd['rmswfe_iter']
-    iters = list(range(len(params)))
-    params = np.asarray(params)
-    p_shape = params.shape
-
-    # prepare the plot
-    fig, axs = plt.subplots(ncols=2, sharex=True, figsize=(8, 3.75))
-
-    # get the parameter names
-    names = list(result_document['retrieved_zernike'].keys())
-    truths = list(result_document['truth_zernike'].values())
-    for i, name, truth in zip(range(p_shape[1]), names, truths):
-        line, = axs[0].plot(iters, params[:, i], label=f'{name} : {truth}')
-        axs[0].scatter(iters[-1], truth, c=line.get_color(), linewidths=2.5)
-
-    axs[0].legend()
-    axs[0].set(xlabel='Optimizer Iteration',
-               ylabel=r'Zernike Weight [$\lambda$ 0-P]')
-
-    axs[1].plot(iters, rmswfe, c='0.25')
-    axs[1].set(xlabel='Optimizer Iteration',
-               ylabel=r'Residual RMS WFE [$\lambda$]',
-               yscale='log')
-
-    fig.tight_layout()
-    return fig, axs
-
-
-def plot_costfcn_by_iter(results, fig=None, ax=None):
-    """Plot the cost function by iteration.
-
-    Parameters
-    ----------
-    results : `dict`
-        results dictionary, with fun_iter key
-    fig : `matplotlib.figure.Figure`
-        Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
-        Axis containing the plot
-
-    Returns
-    -------
-    fig : `matplotlib.figure.Figure`
-        Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
-        Axis containing the plot
-
-    """
-    cost = results['fun_iter']
-    x = range(len(cost))
     fig, ax = share_fig_ax(fig, ax)
-    ax.plot(x, cost, lw=3)
+    _plot_attribute_global(document['cost_iter'], ax=ax)
+    return fig, ax
 
+
+def plot_rrmswfe_history_global(document, fig=None, ax=None):
+    """Plot the residual RMS WFE history of a global optimization run.
+
+    Parameters
+    ----------
+    document : `dict`
+        document produced by utilities.prepare_document_global
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    """
+    fig, ax = share_fig_ax(fig, ax)
+    _plot_attribute_global(document['rrmswfe_iter'], ax=ax)
     return fig, ax
 
 
@@ -164,14 +80,14 @@ def plot_mtf_focus_grid(data, frequencies, focus, fig=None, ax=None):
         focus points the data is given at; y axes, microns
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     Returns
     -------
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     """
@@ -204,14 +120,14 @@ def plot_2d_optframe(data, max_freq=None, focus_range=None, focus_unit=r'$\mu m$
         unit of focus, e.g. um or waves
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     Returns
     -------
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     """
@@ -251,14 +167,14 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
         whether to set axis gridlines to be below the graphics
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     Returns
     -------
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
-    ax : `matplotlib.axes.Axis`:
+    ax : `matplotlib.axes.Axis`
         Axis containing the plot
 
     """
@@ -267,6 +183,7 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
     xpts = np.linspace(np.log10(xlim[0]), np.log10(xlim[1]), num_pts)  # in transformed space
     data = kde(xpts)
     real_xpts = 10 ** xpts
+    data = data / data.sum() * 100
 
     fig, ax = share_fig_ax(fig, ax)
     if shade is True:
@@ -274,5 +191,5 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
         ax.fill_between(real_xpts, data, z)
     ax.plot(real_xpts, data)
     ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]', xscale='log',
-           ylim=(0, None), ylabel='Probability Density', axisbelow=gridlines_below)
+           ylim=(0, None), ylabel='Probability [%]', axisbelow=gridlines_below)
     return fig, ax
