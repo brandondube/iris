@@ -186,12 +186,12 @@ def _mtf_cost_core_addreduce(difference_t, difference_s):
     return difference_t + difference_s
 
 
-def average_mse_focusplanes(costfcn):
+def average_mse_focusplanes(costfcns):
     """Reduces a vector cost function to a single scalar value.
 
     Parameters
     ----------
-    costfcn : `iterable`
+    costfcns : `iterable`
         an iterable containing cost functions for different focal planes
 
     Returns
@@ -205,7 +205,11 @@ def average_mse_focusplanes(costfcn):
     average over focus planes.
 
     """
-    return sum(costfcn) / len(costfcn) * (setup_parameters.freqs[1] - setup_parameters.freqs[0])
+    global setup_parameters
+    delta_nu = setup_parameters.freqs[1] - setup_parameters.freqs[0]
+    nu_max, N = setup_parameters.freqs[-1], len(costfcns)
+    coef = (delta_nu) / (N * nu_max)
+    return coef * sum(costfcns)
 
 
 def realize_focus_plane(params, t_true, s_true, defocus, cost_chain, cost_final):
