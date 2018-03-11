@@ -329,7 +329,7 @@ def correct_global_document(document):
                 o_idx, i_idx = idx1, idx2
                 lowest_cost = item
     output['rrmswfe_final'] = rrmswfe[o_idx][i_idx]
-    return output    
+    return output
 
 
 def pgm_img_to_array(imgstr):
