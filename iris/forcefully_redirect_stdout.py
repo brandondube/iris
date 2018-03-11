@@ -12,7 +12,8 @@ def forcefully_redirect_stdout():
 
     Used to capture data from scipy.optimize.minimize
 
-    Yields:
+    Yields
+    ------
         `dict`: dict with a txt key after the context exits
 
     """
@@ -24,6 +25,7 @@ def forcefully_redirect_stdout():
     fd = target.fileno()
     restore_fd = os.dup(fd)
     try:
+        target.flush()
         tmp, out = tempfile.SpooledTemporaryFile(mode='w+b'), {}
         os.dup2(tmp.fileno(), fd)
         yield out
