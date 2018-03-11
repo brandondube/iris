@@ -26,7 +26,7 @@ DEFAULT_CONFIG = SimulationConfig(
 DEFAULT_CONFIG = make_focus_range_realistic_number_of_microns(DEFAULT_CONFIG, 5)
 
 
-def run_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None, solver='local',
+def run_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None, solver='global',
                    decoder_ring=None, solver_opts=None, core_opts=None):
     """Run a complete simulation generating and retrieving azimuthal order zero terms.
 
@@ -71,11 +71,11 @@ def run_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None, solve
     pupil = config_codex_params_to_pupil(cfg, decoder_ring, truth)
     truth_df = thrufocus_mtf_from_wavefront(pupil, cfg)
     if solver_opts is not None and core_opts is not None:
-        sim_result = solver(cfg, truth_df, decoder_ring, guess, {**solver_opts, 'core_opts': core_opts})
+        sim_result = solver(cfg, truth_df, decoder_ring, guess, **{**solver_opts, 'core_opts': core_opts})
     elif solver_opts is not None:
         sim_result = solver(cfg, truth_df, decoder_ring, guess, **solver_opts)
     elif core_opts is not None:
-        sim_result = solver(cfg, truth_df, decoder_ring, guess, {'core_opts': core_opts})
+        sim_result = solver(cfg, truth_df, decoder_ring, guess, **{'core_opts': core_opts})
     else:
         sim_result = solver(cfg, truth_df, decoder_ring, guess)
 
