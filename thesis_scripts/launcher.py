@@ -42,5 +42,5 @@ if __name__ == '__main__':
     base = root / target[0] / target[1]
     q = PersistentQueue(base / 'queue.pkl')
     db = Database(base, fields=['truth_rmswfe', 'cost_first', 'cost_final', 'rrmswfe_final', 'time', 'nit'])
-    w = Worker(q, db, optmode='global', optopts={'parallel': True, 'nthreads': 23}, work_time=60 * 7)
+    w = Worker( q, db, optmode='global', optopts={'parallel': True, 'nthreads': 23}, optcoreeopts=optargs, work_time=60 * 7)
     w.start()
