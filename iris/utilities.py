@@ -178,7 +178,7 @@ def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe
         }
 
 
-def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
+def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rrmswfe_iter, normed, optimization_result):
         """Prepare a document (dict) for insertion into the results database.
 
         Parameters
@@ -192,7 +192,7 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
             truth parameters
         truth_rmswfe: `float`
             RMS WFE of the truth
-        rmswfe_iter : iterable
+        rrmswfe_iter : iterable
             rms wavefront error for each iteration
         normed : `bool`
             if the coefficients should be made unit RMS value
@@ -230,21 +230,29 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
 
         """
         x, xiter, f, fiter, t = itemgetter('x', 'x_iter', 'fun', 'fun_iter', 'time')(optimization_result)
+        nit = sum([len(i) for i in fiter])
         if type(xiter[0]) is not list:  # only one trial
             nstart = 1
-            rrmswfe_first = rmswfe_iter[0]
-            rrmswfe_final = rmswfe_iter[-1]
+            rrmswfe_first = rrmswfe_iter[0]
             cost_first = fiter[0]
             xiter = [xiter]  # everything is wrapped in a list so that it
             fiter = [fiter]  # is a nested iterable as expected
-            rmswfe_iter = [rmswfe_iter]
+            rrmswfe_iter = [rrmswfe_iter]
         else:  # multiple trials
             nstart = len(xiter)
-            rrmswfe_first = rmswfe_iter[0][0]
-            rrmswfe_final = rmswfe_iter[-1][-1]
+            rrmswfe_first = rrmswfe_iter[0][0]
             cost_first = fiter[0][0]
 
-        nit = sum([len(i) for i in rmswfe_iter])
+        # loop over data to get final RRMSWFE, may not be final value
+        o_idx, i_idx = 0, 0
+        lowest_cost = 1e99
+        for idx1, iterable in enumerate(fiter):
+            for idx2, item in enumerate(iterable):
+                if item < lowest_cost:
+                    o_idx, i_idx = idx1, idx2
+                    lowest_cost = item
+        rrmswfe_final = rrmswfe_iter[o_idx][i_idx]
+
         return {
             'global': True,
             'sim_params': sim_params,
@@ -253,7 +261,7 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rmswf
             'zernike_normed': normed,
             'result_iter': xiter,
             'cost_iter': fiter,
-            'rrmswfe_iter': rmswfe_iter,
+            'rrmswfe_iter': rrmswfe_iter,
             'result_final': x,
             'truth_rmswfe': truth_rmswfe,
             'cost_first': cost_first,
