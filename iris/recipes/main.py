@@ -1,5 +1,4 @@
 """Main recipe."""
-import io
 import time
 from multiprocessing import Pool, cpu_count
 from collections import namedtuple
@@ -9,7 +8,7 @@ from scipy.optimize import minimize, basinhopping
 
 from iris.core import prepare_globals, optfcn
 from iris.forcefully_redirect_stdout import forcefully_redirect_stdout
-from iris.utilities import parse_cost_by_iter_lbfgsb, split_lbfgsb_iters, cost_buffer_string_to_parameter_histories
+from iris.utilities import parse_cost_by_iter_lbfgsb, split_lbfgsb_iters
 from iris.recipes.axis import grab_axial_data
 
 from prysm.otf import diffraction_limited_mtf
@@ -66,15 +65,16 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
     def callback(x):
         parameter_vectors.append(x.copy())
 
+    if core_opts is None:
+        args = (None, None)
+    else:
+        args = core_opts
+
     try:
         parameter_vectors.append(np.asarray(guess))
         t_start = time.perf_counter()
         # do the optimization and capture the per-iteration information from stdout
         with forcefully_redirect_stdout() as out:
-            if core_opts is None:
-                args = (None, None)
-            else:
-                args = core_opts
             result = minimize(
                 fun=optfcn,
                 x0=guess,
@@ -100,7 +100,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
 
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                             ftol=1e-1, max_starts=100, parallel=False, nthreads=None, core_opts=None):
+                             ftol=1e-3, max_starts=100, parallel=False, nthreads=None, core_opts=None):
     """Pseudoglobal basin-hopping based optimization routine.
 
     Parameters
@@ -141,12 +141,24 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
             - time, float
 
     """
+    # extract data and prepare the global variables
     setup_data = prep_data(sys_parameters, truth_dataframe)
     pool = prep_globals(setup_data, sys_parameters, codex, parallel, nthreads)
 
+    # prepare args (optimization subroutine) for optimizer, defaults if not given
+    if core_opts is None:
+        args = (None, None)
+    else:
+        args = core_opts
+
+    # prepare for the logging callbacks
     global nbasinit
     nbasinit = 1
+    parameters_certain = [[guess]]
+    parameters_uncertain = [[]]
 
+    # global callback exits optimization is sufficiently low minimum found, prepares iter for local
+    # local callback logs parameter vectors
     def cb_global(x, f, accept):
         global nbasinit  # declare nit as global
         if f < ftol:     # if the cost function is small enough, declare success
@@ -154,27 +166,17 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         elif nbasinit >= max_starts:  # if there have been the maximum number of starts, stop
             return True
         nbasinit += 1    # if not, increment the counter and make a new parameter history list
+        parameters_certain.append([])
+        parameters_uncertain.append([])
 
-    cost_buffer = io.StringIO()
-    if core_opts is None:
-        args = (None, None)
-    else:
-        args = core_opts
-
-    # the intention is to write the floats out to a string in the same format as
-    # fortran, praying that along the way they have exactly the same roundoff
-    # characteristics and the argmin technique used in the cost buffer scraper
-    # will not run into issues.
-    # this technique is required because L-BFGS-B does not fire the callback
-    # for the first parameter vector, so it would be lost.
-
-    parameters = []
+    def cb_local(x):
+        global nbasinit
+        parameters_certain[nbasinit - 1].append(x.copy())
 
     def optwrapper(x, *args):
-        f = optfcn(x, *args)
-        parameters.append(x.copy())
-        print(f'{f:.4E}', file=cost_buffer)
-        return f
+        global nbasinit
+        parameters_uncertain[nbasinit - 1].append(x.copy())
+        return optfcn(x, *args)
 
     try:
         t_start = time.perf_counter()
@@ -189,26 +191,40 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                     'options': {
                         'disp': True,
                         'ftol': ftol,
-                    }},
+                    },
+                    'callback': cb_local,
+                },
                 callback=cb_global,
                 stepsize=0.05,
-                T=75,
+                T=0.05,  # 0.1 might be more appropriate, try later.
                 interval=2,
                 seed=1234)
 
         t_end = time.perf_counter()
         txt = out['txt']
 
-        # grab the extra data and put everything on the optimizationresult
+        # extract the cost function history from L-BFGS-B output
         iter_outs = split_lbfgsb_iters(txt)
         cost_iters = [parse_cost_by_iter_lbfgsb(txtbuffer) for txtbuffer in iter_outs]
-        parameter_histories = cost_buffer_string_to_parameter_histories(cost_buffer.getvalue(), parameters, cost_iters)
-        result.x_iter = parameter_histories
+
+        # use the manual parameter history to get access to the first iteration of each local
+        # minimization attempt
+        for pcertain, puncertain in zip(parameters_certain, parameters_uncertain):
+            pcertain.insert(0, puncertain[0])
+
+        # finally, because basinhopping does not call the callback after the first iteration,
+        # manually split the first iteration of the parameter histories
+        len_ = len(cost_iters[0])
+        iteration_two = parameters_certain[0][len_:]
+        parameters_certain.insert(1, iteration_two)
+        del parameters_certain[0][len_:]
+
+        # store things on the optimization result object
+        result.x_iter = parameters_certain
         result.fun_iter = cost_iters
         result.time = t_end - t_start
         return result
     finally:
-        cost_buffer.close()
         if pool is not None:
             pool.close()
             pool.join()
