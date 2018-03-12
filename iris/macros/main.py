@@ -98,7 +98,7 @@ def run_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None, solve
         codex=decoder_ring,
         truth_params=truth,
         truth_rmswfe=pupil.rms,
-        rmswfe_iter=residuals,
+        rrmswfe_iter=residuals,
         normed=True,
         optimization_result=sim_result)
     return res

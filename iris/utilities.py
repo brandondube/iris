@@ -110,7 +110,7 @@ def parse_cost_by_iter_lbfgsb(string):
     return [float(s.replace('D', 'E')) for s in fortran_values]
 
 
-def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe_iter, normed, optimization_result):
+def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rrmswfe_iter, normed, optimization_result):
         """Prepare a document (dict) for insertion into the results database.
 
         Parameters
@@ -124,7 +124,7 @@ def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe
             truth parameters
         truth_rmswfe: `float`
             RMS WFE of the truth
-        rmswfe_iter : iterable
+        rrmswfe_iter : iterable
             rms wavefront error for each iteration
         normed : `bool`
             if the coefficients should be made unit RMS value
@@ -142,7 +142,7 @@ def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe
                 - zernike_norm, `bool`
                 - result_iter, `list`
                 - cost_iter, `list`
-                - rrmswfe_iter, `list`
+                - rrrmswfe_iter, `list`
                 - result_final, `tuple`
                   # going on database
                 - truth_rmswfe, `float`
@@ -164,13 +164,13 @@ def prepare_document_local(sim_params, codex, truth_params, truth_rmswfe, rmswfe
             'zernike_normed': normed,
             'result_iter': xiter,
             'cost_iter': fiter,
-            'rrmswfe_iter': rmswfe_iter,
+            'rrmswfe_iter': rrmswfe_iter,
             'result_final': x,
             'truth_rmswfe': truth_rmswfe,
             'cost_first': fiter[0],
             'cost_final': f,
-            'rrmswfe_first': rmswfe_iter[0],
-            'rrmswfe_final': rmswfe_iter[-1],
+            'rrmswfe_first': rrmswfe_iter[0],
+            'rrmswfe_final': rrmswfe_iter[-1],
             'time': t,
             'nit': optimization_result.nit,
             'nfev': optimization_result.nfev,
