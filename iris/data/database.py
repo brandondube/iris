@@ -97,6 +97,7 @@ class Database(object):
 
         """
         row_item = self.make_row(document)
+        id_ = row_item['id']
         self.df = self.df.append(row_item, ignore_index=True)  # assign to df, does not modifiy in-place
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:  # write the file to disk
             pickle.dump(document, fid)
