@@ -36,7 +36,7 @@ else:
 if diff:
     optargs = (_mtf_cost_core_diffractiondiv, opt)
 else:
-    optargs = (opt)
+    optargs = (opt,)
 
 # shield for multiprocessing
 if __name__ == '__main__':
