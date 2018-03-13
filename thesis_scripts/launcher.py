@@ -28,8 +28,10 @@ else:
     diff = False
 if s.split('_')[-1] == 'manhattan':
     opt = _mtf_cost_core_manhattan
+    ftol = 5e-4
 else:
     opt = _mtf_cost_core_sumsquarediff
+    ftol = 1e-7
 
 if diff:
     optargs = (_mtf_cost_core_diffractiondiv, opt)
@@ -42,5 +44,14 @@ if __name__ == '__main__':
     base = root / target[0] / target[1]
     q = PersistentQueue(base / 'queue.pkl')
     db = Database(base, fields=['truth_rmswfe', 'cost_first', 'cost_final', 'rrmswfe_final', 'time', 'nit'])
-    w = Worker( q, db, optmode='global', optopts={'parallel': True, 'nthreads': 23}, optcoreeopts=optargs, work_time=60 * 7)
+    w = Worker(q,
+               db,
+               optmode='global',
+               optopts={
+                   'parallel': True,
+                   'nthreads': 23,
+                   'ftol': ftol,
+               },
+               optcoreeopts=optargs,
+               work_time=60 * 7)
     w.start()
