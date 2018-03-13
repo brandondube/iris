@@ -52,6 +52,6 @@ if __name__ == '__main__':
                    'nthreads': 23,
                    'ftol': ftol,
                },
-               optcoreeopts=optargs,
+               optcoreopts=optargs,
                work_time=60 * 7)
     w.start()
