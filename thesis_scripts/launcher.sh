@@ -7,4 +7,4 @@
 #SBATCH -c 24
 #SBATCH -a 0-19
 #SBATCH --mail-type=all
-python -OO launcher.py clustergrid.yml $SLURM_ARRAY_TASK_ID
+python launcher.py clustergrid.yml $SLURM_ARRAY_TASK_ID
