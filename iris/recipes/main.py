@@ -154,7 +154,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
     # prepare for the logging callbacks
     global nbasinit
     nbasinit = 1
-    parameters_certain = [[guess]]
+    parameters_certain = [[]]
     parameters_uncertain = [[]]
 
     # global callback exits optimization is sufficiently low minimum found, prepares iter for local
