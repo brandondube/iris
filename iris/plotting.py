@@ -1,7 +1,7 @@
 """Tools for plotting the results of wavefront sensing."""
 import numpy as np
 from scipy.stats import gaussian_kde
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import MaxNLocator
 
 from prysm.util import share_fig_ax
 
@@ -14,7 +14,7 @@ def _plot_attribute_global(nested_iterable, ax):
         ax.plot(x, iteration)
         xmin += len_
 
-    ax.xaxis.set_major_formatter(ScalarFormatter())
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
 def plot_costfunction_history_global(document, fig=None, ax=None):
