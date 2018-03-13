@@ -214,8 +214,11 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
 
         # finally, because basinhopping does not call the callback after the first iteration,
         # manually split the first iteration of the parameter histories
+        # accept that it is too difficult to recover the initial guess of the second iteration
+        # due to this splitting action, and set it to the same value as the second iteration
         len_ = len(cost_iters[0])
         iteration_two = parameters_certain[0][len_:]
+        iteration_two.insert(0, iteration_two[0])
         parameters_certain.insert(1, iteration_two)
         del parameters_certain[0][len_:]
 
