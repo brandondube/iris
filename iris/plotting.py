@@ -227,7 +227,7 @@ def plot_rmswfe_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
     return fig, ax
 
 
-def plot_final_cost_rrmswfe(db, ylim=(None, None), fig=None, ax=None):
+def plot_final_cost_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
     """Plot final cost residual RMS WFE vs final cost function value.
 
     This plot can be used as a simplified means of understanding a uniqueness
