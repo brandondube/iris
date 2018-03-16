@@ -193,3 +193,67 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
     ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]', xscale='log',
            ylim=(0, None), ylabel='Probability [%]', axisbelow=gridlines_below)
     return fig, ax
+
+
+def plot_rmswfe_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
+    """Make a scatter plot of residual RMS WFE vs RMS WFE from a database.
+
+    This plot can be used as a simplified means of understanding the capture
+    range of MTF-based wavefront sensing.
+
+    Parameters
+    ----------
+    db : `iris.data.Database`
+        database of simulation results
+    ylim : `iterable`, optional
+        lower, upper y axis limits
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    """
+    fig, ax = share_fig_ax(fig, ax)
+    ax.scatter(db.df.truth_rmswfe, db.df.rrmswfe_final)
+    ax.set(xlabel=r'RMS WFE [$\lambda$]',
+           ylim=ylim, ylabel=r'Residual RMS WFE [$\lambda$]', yscale='log')
+    return fig, ax
+
+
+def plot_final_cost_rrmswfe(db, ylim=(None, None), fig=None, ax=None):
+    """Plot final cost residual RMS WFE vs final cost function value.
+
+    This plot can be used as a simplified means of understanding a uniqueness
+    problem in MTF-based wavefront sensing.
+
+    Parameters
+    ----------
+    db : `iris.data.Database`
+        database of simulation results
+    ylim : iterable, optional
+        Description
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    """
+    fig, ax = share_fig_ax(fig, ax)
+    ax.scatter(db.df.cost_final, db.df.rrmswfe_final)
+    ax.set(xlabel='Cost Function Value',
+           ylim=ylim, ylabel=r'Residual RMS WFE [$\lambda$]', yscale='log')
+    return fig, ax
