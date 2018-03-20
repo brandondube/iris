@@ -39,6 +39,7 @@ def plot_costfunction_history_global(document, fig=None, ax=None):
     """
     fig, ax = share_fig_ax(fig, ax)
     _plot_attribute_global(document['cost_iter'], ax=ax)
+    ax.set(ylabel='Cost Function [a.u.]')
     return fig, ax
 
 
@@ -64,6 +65,7 @@ def plot_rrmswfe_history_global(document, fig=None, ax=None):
     """
     fig, ax = share_fig_ax(fig, ax)
     _plot_attribute_global(document['rrmswfe_iter'], ax=ax)
+    ax.set(ylabel=r'Residual RMS WFE [$\lambda$]')
     return fig, ax
 
 
