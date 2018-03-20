@@ -34,9 +34,9 @@ else:
     ftol = 1e-7
 
 if diff:
-    optargs = (_mtf_cost_core_diffractiondiv, opt)
+    optargs = ((_mtf_cost_core_diffractiondiv, opt), None)
 else:
-    optargs = (opt,)
+    optargs = ((opt,), None)
 
 # shield for multiprocessing
 if __name__ == '__main__':
