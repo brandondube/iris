@@ -150,6 +150,51 @@ def plot_2d_optframe(data, max_freq=None, focus_range=None, focus_unit=r'$\mu m$
     return fig, ax
 
 
+def linear_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below=True, fig=None, ax=None):
+    """Create a Kernel Density Estimation based 'histogram' on a linear x axis.
+
+    Parameters
+    ----------
+    data: `numpy.ndarray`
+        data to plot
+    xlim: iterable of length 2
+        lower and upper x limits to plot
+    num_pts: `int`, optional
+        number of points to sample along x axis
+    shade: `bool`, optional
+        whether to shade the area under the curve
+    bw_method: `str` or `float`, optional
+        passed to `scipy.stats.gaussian_kde` to set the bandwidth during estimation
+    gridlines_below: `bool`
+        whether to set axis gridlines to be below the graphics
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    """
+    kde = gaussian_kde(data, bw_method)
+    xpts = np.linspace(*xlim, num_pts)  # in transformed space
+    ypts = kde(xpts)
+    ypts = ypts / ypts.sum() * 100
+
+    fig, ax = share_fig_ax(fig, ax)
+    if shade is True:
+        z = np.zeros(xpts.shape)
+        ax.fill_between(xpts, ypts, z)
+    ax.plot(xpts, ypts)
+    ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]',
+           ylim=(0, None), ylabel='Probability [%]', axisbelow=gridlines_below)
+    return fig, ax
+
+
 def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below=True, fig=None, ax=None):
     """Create a Kernel Density Estimation based 'histogram' on a logarithmic x axis.
 
