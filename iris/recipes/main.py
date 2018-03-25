@@ -197,7 +197,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                 callback=cb_global,
                 stepsize=0.05,
                 T=0.05,  # 0.1 might be more appropriate, try later.
-                interval=2,
+                interval=3,
                 seed=1234)
 
         t_end = time.perf_counter()
@@ -207,20 +207,37 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         iter_outs = split_lbfgsb_iters(txt)
         cost_iters = [parse_cost_by_iter_lbfgsb(txtbuffer) for txtbuffer in iter_outs]
 
-        # use the manual parameter history to get access to the first iteration of each local
-        # minimization attempt
-        for pcertain, puncertain in zip(parameters_certain, parameters_uncertain):
-            pcertain.insert(0, puncertain[0])
+        # if too many basins have been hopped, the parameter set will be empty and needs to be removed
+        if 'requested number of basinhopping iterations completed successfully' in result.message:
+            del parameters_certain[-1]
+            del parameters_uncertain[-1]
 
-        # finally, because basinhopping does not call the callback after the first iteration,
-        # manually split the first iteration of the parameter histories
-        # accept that it is too difficult to recover the initial guess of the second iteration
-        # due to this splitting action, and set it to the same value as the second iteration
-        len_ = len(cost_iters[0])
-        iteration_two = parameters_certain[0][len_:]
-        iteration_two.insert(0, iteration_two[0])
-        parameters_certain.insert(1, iteration_two)
-        del parameters_certain[0][len_:]
+        # add the guess to the front of the certain values
+        parameters_uncertain[0].insert(0, np.asarray(guess))
+
+        # take the first call from the uncertain parameter histories and append it to the certain ones
+        for pc, pu in zip(parameters_certain, parameters_uncertain):
+            pc.insert(0, pu[0])
+
+        # now use the first cost function history (which is properly broken up)
+        # to know where to cut the parameter vectors
+        # take the length of the first cost function iteration, and break the
+        # first set of parameter vectors there
+        max_length = len(cost_iters[0])
+        pc1, pu1 = parameters_certain[0], parameters_uncertain[0]
+        cfirst, csecond = pc1[:max_length], pc1[max_length:]
+        usecond = pu1[max_length:]
+
+        # because the uncertain parameter vector has an element for each function call, we don't know the index of the element
+        # for the onset of the second iteration.
+        # use minimization to find the true parameters
+        tmp_costs, real_cost = np.asarray([optfcn(x) for x in usecond]), cost_iters[1][0]
+        diff = abs(tmp_costs - real_cost)
+        second_iteration_first = usecond[np.argmin(diff)]
+
+        parameters_certain.insert(0, cfirst)
+        parameters_certain[1] = csecond
+        parameters_certain[1].insert(0, np.asarray(second_iteration_first))
 
         # store things on the optimization result object
         result.x_iter = parameters_certain
@@ -249,8 +266,7 @@ def prep_data(sys_parameters, truth_df):
         optimization setup namedtuple with focus diversity, t and s truth data, and diffraction data
 
     """
-    (focus_diversity,
-     ax_t, ax_s) = grab_axial_data(sys_parameters, truth_df)
+    focus_diversity, ax_t, ax_s = grab_axial_data(sys_parameters, truth_df)
 
     # casting ndarray to list makes it a list of arrays where the first index
     # is the focal plane and the second frequency.
