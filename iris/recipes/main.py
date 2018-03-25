@@ -207,7 +207,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         iter_outs = split_lbfgsb_iters(txt)
         cost_iters = [parse_cost_by_iter_lbfgsb(txtbuffer) for txtbuffer in iter_outs]
 
-        # if too many basins have been hopped, the parameter set will be empty and needs to be removed
+        # if too many basins have been hopped, the final parameter set will be empty and needs to be removed
         if 'requested number of basinhopping iterations completed successfully' in result.message:
             del parameters_certain[-1]
             del parameters_uncertain[-1]
