@@ -252,7 +252,7 @@ def realize_focus_plane(params, t_true, s_true, defocus, cost_chain, cost_final)
     return cost_final(dt, ds)     # finally, reduce the value to a scalar / float
 
 
-COST_CHAIN_DEFAULT = (_mtf_cost_core_diffractiondiv, _mtf_cost_core_manhattan)
+COST_CHAIN_DEFAULT = (_mtf_cost_core_sumsquarediff,)
 COST_FINAL_DEFAULT = _mtf_cost_core_addreduce
 
 
