@@ -4,6 +4,7 @@ from scipy.stats import gaussian_kde
 from matplotlib.ticker import MaxNLocator
 
 from prysm.util import share_fig_ax
+from prysm.mathops import sqrt as _sqrt
 
 
 def _plot_attribute_global(nested_iterable, ax):
@@ -17,13 +18,15 @@ def _plot_attribute_global(nested_iterable, ax):
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
-def plot_costfunction_history_global(document, fig=None, ax=None):
+def plot_costfunction_history_global(document, sqrt=False, fig=None, ax=None):
     """Plot the cost function history of a global optimization run.
 
     Parameters
     ----------
     document : `dict`
         document produced by utilities.prepare_document_global
+    sqrt : `bool`
+        whether to take the sqrt of the cost function
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -38,8 +41,14 @@ def plot_costfunction_history_global(document, fig=None, ax=None):
 
     """
     fig, ax = share_fig_ax(fig, ax)
-    _plot_attribute_global(document['cost_iter'], ax=ax)
-    ax.set(ylabel='Cost Function [a.u.]')
+    if sqrt:
+        data = [[_sqrt(x) for x in y] for y in document['cost_iter']]
+        label = r'$\sqrt{Cost\, Function\,}$ [a.u.]'
+    else:
+        data = document['cost_iter']
+        label = 'Cost Function [a.u.]'
+    _plot_attribute_global(data, ax=ax)
+    ax.set(ylabel=label)
     return fig, ax
 
 
@@ -304,3 +313,34 @@ def plot_final_cost_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
     ax.set(xlabel='Cost Function Value',
            ylim=ylim, ylabel=r'Residual RMS WFE [$\lambda$]', yscale='log')
     return fig, ax
+
+
+def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
+
+    axial_mtf_data = df[df.Field == 0]
+    focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
+    ax_t = []
+    ax_s = []
+    for pos in focuspos:
+        fd = axial_mtf_data[axial_mtf_data.Focus == pos]
+        ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].as_matrix())
+        ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].as_matrix())
+
+    ax_t = np.asarray(ax_t)
+    ax_s = np.asarray(ax_s)
+
+    extx, exty = [df.Freq.min(), df.Freq.max()], [focuspos[0], focuspos[-1]]
+    fig, axs = share_fig_ax(fig, axs, numax=2)
+    for data, ax, title in zip([ax_t, ax_s], axs, titles):
+        im = ax.imshow(data,
+                  extent=[*extx, *exty],
+                  origin='lower',
+                  aspect='auto',
+                  cmap='inferno',
+                  clim=(0, 1),
+                  interpolation='lanczos')
+        ax.set(xlim=extx, xlabel='Spatial Frequency [cy/mm]', ylim=exty, ylabel=r'Focus [$\mu m$]', title=title)
+
+    fig.tight_layout()
+    fig.colorbar(im, ax=axs, label='MTF [Rel. 1.0]')
+    return fig, axs
