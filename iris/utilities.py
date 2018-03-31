@@ -245,13 +245,14 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rrmsw
 
         # loop over data to get final RRMSWFE, may not be final value
         o_idx, i_idx = 0, 0
-        lowest_cost = 1e99
-        for idx1, iterable in enumerate(fiter):
+        lowest_rms = 1e99
+        for idx1, iterable in enumerate(rrmswfe_iter):
             for idx2, item in enumerate(iterable):
-                if item < lowest_cost:
+                if item < lowest_rms:
                     o_idx, i_idx = idx1, idx2
-                    lowest_cost = item
+                    lowest_rms = item
         rrmswfe_final = rrmswfe_iter[o_idx][i_idx]
+        cost_final = fiter[o_idx][i_idx]
 
         return {
             'global': True,
@@ -265,7 +266,7 @@ def prepare_document_global(sim_params, codex, truth_params, truth_rmswfe, rrmsw
             'result_final': x,
             'truth_rmswfe': truth_rmswfe,
             'cost_first': cost_first,
-            'cost_final': f,
+            'cost_final': cost_final,
             'rrmswfe_first': rrmswfe_first,
             'rrmswfe_final': rrmswfe_final,
             'time': t,
@@ -291,14 +292,36 @@ def correct_global_document(document):
     output = document.copy()
     rrmswfe, cost = document['rrmswfe_iter'], document['cost_iter']
     o_idx, i_idx = 0, 0
-    lowest_cost = 1e99
-    for idx1, iterable in enumerate(cost):
+    lowest_wfe = 1e99
+    for idx1, iterable in enumerate(rrmswfe):
         for idx2, item in enumerate(iterable):
-            if item < lowest_cost:
+            if item < lowest_wfe:
                 o_idx, i_idx = idx1, idx2
-                lowest_cost = item
+                lowest_wfe = item
     output['rrmswfe_final'] = rrmswfe[o_idx][i_idx]
+    output['cost_final'] = cost[o_idx][i_idx]
     return output
+
+
+def recheck_min_rrmswfe_document(document):
+    """Reheck a global document to ensure the residual RMS WFE is the true minimum.
+
+    Parameters
+    ----------
+    document: `dict
+        document prepared by prepare_document_global
+
+    Returns
+    -------
+    `dict`
+        updated document
+
+    """
+    out = document.copy()
+    rrmswfe = out['rrmswfe_iter']
+    rrmswfe_min = min([min(v) for v in rrmswfe])
+    out['rrmswfe_final'] = rrmswfe_min
+    return out
 
 
 def pgm_img_to_array(imgstr):
