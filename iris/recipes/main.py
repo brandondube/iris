@@ -100,7 +100,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
 
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                             ftol=1e-3, max_starts=100, parallel=False, nthreads=None, core_opts=None):
+                             ftol=1e-7, max_starts=100, parallel=False, nthreads=None, core_opts=None):
     """Pseudoglobal basin-hopping based optimization routine.
 
     Parameters
@@ -191,6 +191,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                     'options': {
                         'disp': True,
                         'ftol': ftol,
+                        'maxiter': 100,
                     },
                     'callback': cb_local,
                 },
