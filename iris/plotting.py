@@ -5,6 +5,10 @@ from matplotlib.ticker import MaxNLocator
 
 from prysm.util import share_fig_ax
 from prysm.mathops import sqrt as _sqrt
+from prysm import MTF
+from prysm.mtf_utils import mtf_ts_extractor
+
+from .core import config_codex_params_to_imgs
 
 
 def _plot_attribute_global(nested_iterable, ax):
@@ -317,6 +321,25 @@ def plot_final_cost_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
 
 def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
 
+    focuspos, ax_t, ax_s = _axial_df_to_image_focus(df)
+    extx, exty = [df.Freq.min(), df.Freq.max()], [focuspos[0], focuspos[-1]]
+    fig, axs = share_fig_ax(fig, axs, numax=2)
+    for data, ax, title in zip([ax_t, ax_s], axs, titles):
+        im = ax.imshow(data,
+                  extent=[*extx, *exty],
+                  origin='lower',
+                  aspect='auto',
+                  cmap='inferno',
+                  clim=(0, 1),
+                  interpolation='lanczos')
+        ax.set(xlim=extx, xlabel='Spatial Frequency [cy/mm]', ylim=exty, ylabel=r'Focus [$\mu m$]', title=title)
+
+    fig.tight_layout()
+    fig.colorbar(im, ax=axs, label='MTF [Rel. 1.0]')
+    return fig, axs
+
+
+def _axial_df_to_image_focus(df):
     axial_mtf_data = df[df.Field == 0]
     focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
     ax_t = []
@@ -328,10 +351,16 @@ def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
 
     ax_t = np.asarray(ax_t)
     ax_s = np.asarray(ax_s)
+    return focuspos, ax_t, ax_s
 
-    extx, exty = [df.Freq.min(), df.Freq.max()], [focuspos[0], focuspos[-1]]
+
+def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
+    imgt, imgs = config_codex_params_to_imgs(config, codex, params, focuses)
+    extx = [config.freqs[0], config.freqs[-1]]
+    exty = [focuses[0], focuses[-1]]
+
     fig, axs = share_fig_ax(fig, axs, numax=2)
-    for data, ax, title in zip([ax_t, ax_s], axs, titles):
+    for data, ax, title in zip([imgt, imgs], axs, titles):
         im = ax.imshow(data,
                   extent=[*extx, *exty],
                   origin='lower',
