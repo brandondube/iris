@@ -141,6 +141,7 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
             - time, float
 
     """
+    max_starts -= 1  # scipy bug, does n+1 iters
     # extract data and prepare the global variables
     setup_data = prep_data(sys_parameters, truth_dataframe)
     pool = prep_globals(setup_data, sys_parameters, codex, parallel, nthreads)
