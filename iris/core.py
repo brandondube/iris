@@ -1,8 +1,11 @@
 """Core optimization routines for wavefront sensing."""
 from functools import partial
 
+import numpy as np
+
 from prysm import FringeZernike, MTF
 from prysm.mtf_utils import mtf_ts_extractor
+from prysm.thinlens import image_displacement_to_defocus
 from prysm.mathops import sqrt
 
 
@@ -35,6 +38,20 @@ def config_codex_params_to_pupil(config, codex, params, defocus=0):
                          wavelength=s.wvl,
                          samples=s.samples,
                          rms_norm=s.focus_normed)
+
+
+def config_codex_params_to_imgs(cfg, codex, params, defocuses):
+    wv_defocuses = image_displacement_to_defocus(defocuses, cfg.fno, cfg.wvl, cfg.focus_zernike, cfg.focus_normed)
+    tan, sag = [], []
+    for defocus in wv_defocuses:
+        p = config_codex_params_to_pupil(cfg, codex, params, defocus)
+        m = MTF.from_pupil(p, cfg.efl)
+        t, s = mtf_ts_extractor(m, cfg.freqs)
+        tan.append(t)
+        sag.append(s)
+
+    t, s = np.asarray(tan), np.asarray(sag)
+    return t, s
 
 
 def mtf_cost_core_main(true_tan, true_sag, sim_tan, sim_sag):
