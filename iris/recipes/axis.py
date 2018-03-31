@@ -35,14 +35,14 @@ def generate_random_axial_truth_coefs(peak, ncoefs, symmetric=True):
     return list(dat)
 
 
-def grab_axial_data(setup_parameters, truth_dataframe):
+def grab_axial_data(setup_parameters, df):
     """Pull axial through-focus MTF data from a pandas DataFrame.
 
     Parameters
     ----------
     setup_parameters : dict
         dictionary with keys `fno` and `wavelength`
-    truth_dataframe : pandas.DataFrame
+    df : pandas.DataFrame
         Dataframe with columns `Field`, `Focus`, `Azimuth`, and `MTF`.
 
     Returns
@@ -56,15 +56,16 @@ def grab_axial_data(setup_parameters, truth_dataframe):
 
     """
     s = setup_parameters
-    axial_mtf_data = truth_dataframe[truth_dataframe.Field == 0]
-    focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
+    df = df.sort_values(by=['Field', 'Focus', 'Azimuth', 'Freq'])
+    axial_mtf_data = df[df.Field == 0]
+    focuspos = axial_mtf_data.Focus.unique()
     wvfront_defocus = image_displacement_to_defocus(focuspos, s.fno, s.wvl, s.focus_zernike, s.focus_normed)
     ax_t = []
     ax_s = []
     for pos in focuspos:
         fd = axial_mtf_data[axial_mtf_data.Focus == pos]
-        ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].as_matrix())
-        ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].as_matrix())
+        ax_t.append(fd[fd.Azimuth == 'Tan']['MTF'].values)
+        ax_s.append(fd[fd.Azimuth == 'Sag']['MTF'].values)
 
     wvfront_defocus = np.asarray(wvfront_defocus)
     ax_t = np.asarray(ax_t)
