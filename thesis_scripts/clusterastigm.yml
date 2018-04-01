@@ -1,0 +1,6 @@
+root: ./data/astigmatism-vs-angle
+chunks:
+  - 1
+  - 2
+  - 3
+  - 4

@@ -1,0 +1,6 @@
+root: ./data/coma-vs-angle
+chunks:
+  - 1
+  - 2
+  - 3
+  - 4
