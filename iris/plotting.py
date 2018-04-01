@@ -1,6 +1,7 @@
 """Tools for plotting the results of wavefront sensing."""
 import numpy as np
 from scipy.stats import gaussian_kde
+import matplotlib as mpl
 from matplotlib.ticker import MaxNLocator
 
 from prysm.util import share_fig_ax
@@ -317,13 +318,15 @@ def plot_final_cost_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
     return fig, ax
 
 
-def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
+def plot_axial_df_2d(df, gamma=1.5, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
     """Make a 2D plot of (frequency, focus) from a dataframe containing axial data.
 
     Parameters
     ----------
     df : `pandas.DataFrame`
         a pandas df with columns Focus, Field, Freq, Azimuth, and MTF
+    gamma : `float`, optional
+        gamma value to stretch plot by
     titles : iterable, optional
         titles for the left and right panes
     fig : `matplotlib.figure.Figure`
@@ -348,6 +351,7 @@ def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
                        origin='lower',
                        aspect='auto',
                        cmap='inferno',
+                       norm=mpl.colors.PowerNorm(1 / gamma),
                        clim=(0, 1),
                        interpolation='lanczos')
         ax.set(xlim=extx, xlabel='Spatial Frequency [cy/mm]', ylim=exty, ylabel=r'Focus [$\mu m$]', title=title)
@@ -372,7 +376,7 @@ def _axial_df_to_image_focus(df):
     return focuspos, ax_t, ax_s
 
 
-def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
+def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, gamma=1.5, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
     """Make a 2D image of (frequency, focus) from data used to do a simulation.
 
     Parameters
@@ -385,6 +389,8 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, title
         set of wavefront parameters
     focuses : iterable
         set of focus values, in um
+    gamma : `float`, optional
+        gamma value to stretch plot by
     titles : iterable, optional
         titles to use to label plots
     fig : `matplotlib.figure.Figure`
@@ -411,6 +417,7 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, title
                        origin='lower',
                        aspect='auto',
                        cmap='inferno',
+                       norm=mpl.colors.PowerNorm(1 / gamma),
                        clim=(0, 1),
                        interpolation='lanczos')
         ax.set(xlim=extx, xlabel='Spatial Frequency [cy/mm]', ylim=exty, ylabel=r'Focus [$\mu m$]', title=title)
@@ -420,7 +427,7 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, title
     return fig, axs
 
 
-def zernike_barplot(zerndict, barwidth=0.8, fig=None, ax=None):
+def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, fig=None, ax=None):
     """Summary
 
     Parameters
@@ -429,6 +436,8 @@ def zernike_barplot(zerndict, barwidth=0.8, fig=None, ax=None):
         dictionary with keys 'Zxxx' and numeric values
     barwidth : float, optional
         width of bars; values greater than 1 may cause poor appearance
+    alpha : `float`, optional
+        transparency of the bars
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -449,7 +458,7 @@ def zernike_barplot(zerndict, barwidth=0.8, fig=None, ax=None):
 
     fig, ax = share_fig_ax(fig, ax)
     ax.plot(base_x, base_y, lw=0.5, c='k')
-    ax.bar(nums, zerndict.values(), width=barwidth, zorder=4)
+    ax.bar(nums, zerndict.values(), width=barwidth, alpha=alpha, zorder=4)
     ax.set(xticks=nums, xticklabels=zerndict.keys(), ylabel=r'Amplitude RMS [$\lambda$]')
     # ax.set_xticks(nums)
     # ax.set_xticklabels(zerndict.keys())
