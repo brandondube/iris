@@ -20,7 +20,7 @@ def config_codex_params_to_pupil(config, codex, params, defocus=0):
         dict with integer, string key value pairs, e.g. {0: 'Z1', 1: 'Z9'}
     params : iterable
         sequence of optimization parameters
-    defocus : float, optional
+    defocus : `float`, optional
         amount of defocus applied in the same units as params
 
     Returns
