@@ -449,7 +449,7 @@ def zernike_barplot(zerndict, barwidth=0.8, fig=None, ax=None):
 
     fig, ax = share_fig_ax(fig, ax)
     ax.plot(base_x, base_y, lw=0.5, c='k')
-    ax.bar(nums, zerndict.values(), width=barwidth)
+    ax.bar(nums, zerndict.values(), width=barwidth, zorder=4)
     ax.set(xticks=nums, xticklabels=zerndict.keys(), ylabel=r'Amplitude RMS [$\lambda$]')
     # ax.set_xticks(nums)
     # ax.set_xticklabels(zerndict.keys())
