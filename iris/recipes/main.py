@@ -18,7 +18,7 @@ OptSetup = namedtuple('OptSetup', ['focus_diversity', 't_true', 's_true', 'diffr
 
 
 def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                       ftol=1e-2, parallel=False, nthreads=None, core_opts=None):
+                       ftol=1e-7, parallel=False, nthreads=None, core_opts=None):
     """Retrieve spherical aberration-related coefficients from axial MTF data.
 
     Parameters
