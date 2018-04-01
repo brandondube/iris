@@ -9,7 +9,7 @@ from iris.utilities import (
 )
 from iris.recipes import opt_routine_lbfgsb, opt_routine_basinhopping
 from iris.core import config_codex_params_to_pupil
-from iris.rings import W1, W2
+from iris.rings import W1
 
 efl, fno, lambda_ = 50, 2, 0.55
 extinction = 1000 / (fno * lambda_)
@@ -58,10 +58,10 @@ def run_simulation(truth=(0, 0.125, 0, 0), guess=(0, 0.0, 0, 0), cfg=None, solve
         cfg = DEFAULT_CONFIG
 
     if decoder_ring is None:
-        if len(guess) == 16:
-            decoder_ring = W2
-        else:
-            decoder_ring = W1
+        decoder_ring = W1
+
+    if sum(guess) < 1e-5:
+        guess = [0] * len(decoder_ring.keys())
 
     if solver.lower() == 'local':
         solver, prepare_document, flag = opt_routine_lbfgsb, prepare_document_local, 'local'
