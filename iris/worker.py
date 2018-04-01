@@ -7,7 +7,7 @@ from iris.macros import run_simulation
 class Worker(object):
     """A worker."""
 
-    def __init__(self, queue, database, optmode='local', optopts=None, optcoreopts=None, work_time=None, work_jobs=None):
+    def __init__(self, queue, database, optmode='local', simopts=None, optopts=None, optcoreopts=None, work_time=None, work_jobs=None):
         """Create a new worker.
 
         Parameters
@@ -18,6 +18,7 @@ class Worker(object):
             a database object
         optmode : `str`, optional, {'local', 'global'}
             optimization mode; local or global
+        simopts : `dict`, optional
         optopts : `dict`, optional
             options passed to the optimiser
         optcoreopts : `dict`, optional
@@ -47,6 +48,7 @@ class Worker(object):
             self.current_job = 0
             self.mode = 'jobs'
 
+        self.simopts = simopts
         self.optmode = optmode
         self.optopts = optopts
         self.optcoreopts = optcoreopts
@@ -68,11 +70,16 @@ class Worker(object):
             return
 
         try:
+            if self.simopts is not None:
+                so = self.simopts
+            else:
+                so = dict()
             self.last_result = run_simulation(
                 truth=item,
                 solver=self.optmode,
                 solver_opts=self.optopts,
-                core_opts=self.optcoreopts)
+                core_opts=self.optcoreopts,
+                **so)
             self.db.append(self.last_result)
             self.q.mark_done()
         except (KeyError, IndexError) as e:
