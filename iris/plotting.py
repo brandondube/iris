@@ -5,8 +5,6 @@ from matplotlib.ticker import MaxNLocator
 
 from prysm.util import share_fig_ax
 from prysm.mathops import sqrt as _sqrt
-from prysm import MTF
-from prysm.mtf_utils import mtf_ts_extractor
 
 from .core import config_codex_params_to_imgs
 
@@ -320,18 +318,38 @@ def plot_final_cost_rrmswfe_scatter(db, ylim=(None, None), fig=None, ax=None):
 
 
 def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
+    """Make a 2D plot of (frequency, focus) from a dataframe containing axial data.
 
+    Parameters
+    ----------
+    df : `pandas.DataFrame`
+        a pandas df with columns Focus, Field, Freq, Azimuth, and MTF
+    titles : iterable, optional
+        titles for the left and right panes
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    axs : iterable of `matplotlib.axes.Axis`
+        Axes containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    axs : iterable of `matplotlib.axes.Axis`
+        Axes containing the plot
+
+    """
     focuspos, ax_t, ax_s = _axial_df_to_image_focus(df)
     extx, exty = [df.Freq.min(), df.Freq.max()], [focuspos[0], focuspos[-1]]
     fig, axs = share_fig_ax(fig, axs, numax=2)
     for data, ax, title in zip([ax_t, ax_s], axs, titles):
         im = ax.imshow(data,
-                  extent=[*extx, *exty],
-                  origin='lower',
-                  aspect='auto',
-                  cmap='inferno',
-                  clim=(0, 1),
-                  interpolation='lanczos')
+                       extent=[*extx, *exty],
+                       origin='lower',
+                       aspect='auto',
+                       cmap='inferno',
+                       clim=(0, 1),
+                       interpolation='lanczos')
         ax.set(xlim=extx, xlabel='Spatial Frequency [cy/mm]', ylim=exty, ylabel=r'Focus [$\mu m$]', title=title)
 
     fig.tight_layout()
@@ -341,7 +359,7 @@ def plot_axial_df_2d(df, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
 
 def _axial_df_to_image_focus(df):
     axial_mtf_data = df[df.Field == 0]
-    focuspos = np.unique(axial_mtf_data.Focus.as_matrix())
+    focuspos = df.Focus.sort_values().unique()
     ax_t = []
     ax_s = []
     for pos in focuspos:
@@ -355,6 +373,33 @@ def _axial_df_to_image_focus(df):
 
 
 def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, titles=('Tangential', 'Sagittal'), fig=None, axs=None):
+    """Make a 2D image of (frequency, focus) from data used to do a simulation.
+
+    Parameters
+    ----------
+    config : `prysm.macros.SimulationConfig`
+        a simulationconfig
+    codex : `dict`
+        dictionary with keys of integers and values of 'Zxx' strings, see `iris.rings`
+    params : iterable
+        set of wavefront parameters
+    focuses : iterable
+        set of focus values, in um
+    titles : iterable, optional
+        titles to use to label plots
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    axs : iterable of `matplotlib.axes.Axis`
+        Axes containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    axs : iterable of `matplotlib.axes.Axis`
+        Axes containing the plot
+
+    """
     imgt, imgs = config_codex_params_to_imgs(config, codex, params, focuses)
     extx = [config.freqs[0], config.freqs[-1]]
     exty = [focuses[0], focuses[-1]]
@@ -362,12 +407,12 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, title
     fig, axs = share_fig_ax(fig, axs, numax=2)
     for data, ax, title in zip([imgt, imgs], axs, titles):
         im = ax.imshow(data,
-                  extent=[*extx, *exty],
-                  origin='lower',
-                  aspect='auto',
-                  cmap='inferno',
-                  clim=(0, 1),
-                  interpolation='lanczos')
+                       extent=[*extx, *exty],
+                       origin='lower',
+                       aspect='auto',
+                       cmap='inferno',
+                       clim=(0, 1),
+                       interpolation='lanczos')
         ax.set(xlim=extx, xlabel='Spatial Frequency [cy/mm]', ylim=exty, ylabel=r'Focus [$\mu m$]', title=title)
 
     fig.tight_layout()
