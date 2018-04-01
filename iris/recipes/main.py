@@ -100,7 +100,8 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
 
 
 def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0),
-                             ftol=1e-7, max_starts=100, parallel=False, nthreads=None, core_opts=None):
+                             ftol=1e-7, step=0.05, temp=0.05, max_starts=100,
+                             parallel=False, nthreads=None, core_opts=None):
     """Pseudoglobal basin-hopping based optimization routine.
 
     Parameters
@@ -114,9 +115,13 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
         numbers to zernike numbers, e.g. {0: 'Z1', 1: 'Z9'} maps (10, 11) to {'Z1': 10, 'Z9': 11}
     guess : iterable, optional
         guess coefficients for the wavefront
-    ftol : `float`
+    ftol : `float`, optional
         cost function tolerance
-    max_starts : `int`
+    step : `float`, optional
+        step size for random search
+    temp : `float`, optional
+        maximum acceptible uphill motion to accept a new starting point
+    max_starts : `int`, optional
         maximum number of pseudorandom starting guesses to make
     parallel : `bool`, optional
         whether to run optimization in parallel.  Defaults to true
@@ -197,8 +202,8 @@ def opt_routine_basinhopping(sys_parameters, truth_dataframe, codex, guess=(0, 0
                     'callback': cb_local,
                 },
                 callback=cb_global,
-                stepsize=0.05,
-                T=0.05,  # 0.1 might be more appropriate, try later.
+                stepsize=step,
+                T=temp,
                 interval=3,
                 seed=1234)
 
