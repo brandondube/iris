@@ -1,4 +1,10 @@
-"""One Ring to rule them all two ring to get a degree."""
+"""One Ring to rule them all, two ring to get a degree."""
+
+
+def merge_ring_and_parameters(ring, parameters):
+    labels = ring.values()
+    return {key: value for key, value in zip(labels, parameters)}
+
 
 W1 = {
     0: 'Z4',

@@ -418,3 +418,43 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, title
     fig.tight_layout()
     fig.colorbar(im, ax=axs, label='MTF [Rel. 1.0]')
     return fig, axs
+
+
+def zernike_barplot(zerndict, barwidth=0.8, fig=None, ax=None):
+    """Summary
+
+    Parameters
+    ----------
+    zerndict : TYPE
+        dictionary with keys 'Zxxx' and numeric values
+    barwidth : float, optional
+        width of bars; values greater than 1 may cause poor appearance
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    Returns
+    -------
+    fig : `matplotlib.figure.Figure`
+        Figure containing the plot
+    ax : `matplotlib.axes.Axis`
+        Axis containing the plot
+
+    """
+    nums = [int(x[1:]) for x in zerndict.keys()]
+    base_adj = barwidth / 2
+    base_y = [0, 0]
+    base_x = [min(nums) - base_adj, max(nums) + base_adj]
+
+    fig, ax = share_fig_ax(fig, ax)
+    ax.plot(base_x, base_y, lw=0.5, c='k')
+    ax.bar(nums, zerndict.values(), width=barwidth)
+    ax.set(xticks=nums, xticklabels=zerndict.keys(), ylabel=r'Amplitude RMS [$\lambda$]')
+    # ax.set_xticks(nums)
+    # ax.set_xticklabels(zerndict.keys())
+    # ax.minorticks_off()
+    for tick in ax.get_xticklabels():
+        tick.set_rotation(45)
+
+    return fig, ax
