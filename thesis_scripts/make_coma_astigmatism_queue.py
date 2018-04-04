@@ -33,8 +33,9 @@ out[:, 4] = xcoef
 
 chunks = np.split(out, 4)
 
-rootc = Path(__file__).parent / 'data' / 'coma-vs-angle'
-roota = Path(__file__).parent / 'data' / 'astigmatism-vs-angle'
+root = Path(__file__).parent / '..' / '..' / 'data'
+rootc = root / 'coma-vs-angle'
+roota = root / 'astigmatism-vs-angle'
 for idx, chunk in enumerate(chunks):
     p = rootc / str(idx) / 'queue.pkl'
     q = PersistentQueue(p, overwrite=True)

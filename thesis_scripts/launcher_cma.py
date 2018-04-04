@@ -20,7 +20,7 @@ if __name__ == '__main__':
     root = Path(cfg['root']).expanduser()
     base = root / str(chunk)
     q = PersistentQueue(base / 'queue.pkl')
-    db = Database(base, fields=['truth_rmswfe', 'cost_first', 'cost_final', 'rrmswfe_final', 'time', 'nit'])
+    db = Database(base)#, fields=['truth_rmswfe', 'cost_first', 'cost_final', 'rrmswfe_final', 'time', 'nit'])
     w = Worker(q,
                db,
                optmode='global',
@@ -29,9 +29,9 @@ if __name__ == '__main__':
                    'decoder_ring': W3
                    },
                optopts={
-                   'parallel': True,
-                   'nthreads': 23,
+                   'parallel': False,
+                   'nthreads': 6,
                    'ftol': 1e-7,
                },
-               work_time=60 * 7)
+               work_time=60 * 17)
     w.start()

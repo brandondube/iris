@@ -7,4 +7,4 @@
 #SBATCH -c 24
 #SBATCH -a 0-3
 #SBATCH --mail-type=all
-python launcher.py clustercoma.yml $SLURM_ARRAY_TASK_ID
+python launcher_cma.py clustercoma.yml $SLURM_ARRAY_TASK_ID
