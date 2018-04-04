@@ -3,7 +3,7 @@ common:
   microscope_magnification: 50  # unitless
   wavelength: 0.5460            # microns
   bit_depth: 12                 # bpp, monochrome
-  pixel_pitch: 10               # microns
+  pixel_pitch: 25               # microns
   resolution:
     - 648                       # W
     - 488                       # H
