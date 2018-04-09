@@ -37,7 +37,8 @@ def config_codex_params_to_pupil(config, codex, params, defocus=0):
                          epd=s.efl / s.fno,
                          wavelength=s.wvl,
                          samples=s.samples,
-                         rms_norm=s.focus_normed)
+                         rms_norm=s.focus_normed,
+                         mask=s.mask)
 
 
 def config_codex_params_to_imgs(cfg, codex, params, defocuses):
