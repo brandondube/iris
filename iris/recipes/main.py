@@ -82,6 +82,7 @@ def opt_routine_lbfgsb(sys_parameters, truth_dataframe, codex, guess=(0, 0, 0, 0
                 options={
                     'disp': True,
                     'ftol': ftol,
+                    'maxiter': 50,
                 },
                 args=args,
                 callback=callback)
