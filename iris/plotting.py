@@ -203,7 +203,7 @@ def linear_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_be
         ax.fill_between(xpts, ypts, z)
     ax.plot(xpts, ypts)
     ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]',
-           ylim=(0, None), ylabel='Probability [%]', axisbelow=gridlines_below)
+           ylim=(0, None), ylabel='Probability Density [%]', axisbelow=gridlines_below)
     return fig, ax
 
 
@@ -250,7 +250,7 @@ def log_kde(data, xlim, num_pts=100, shade=True, bw_method=None, gridlines_below
         ax.fill_between(real_xpts, data, z)
     ax.plot(real_xpts, data)
     ax.set(xlim=xlim, xlabel=r'Residual RMS WFE [$\lambda$]', xscale='log',
-           ylim=(0, None), ylabel='Probability [%]', axisbelow=gridlines_below)
+           ylim=(0, None), ylabel='Probability Density [%]', axisbelow=gridlines_below)
     return fig, ax
 
 
