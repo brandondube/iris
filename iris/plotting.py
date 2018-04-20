@@ -427,7 +427,7 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, gamma
     return fig, axs
 
 
-def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, fig=None, ax=None):
+def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, label=None, fig=None, ax=None):
     """Summary
 
     Parameters
@@ -438,6 +438,8 @@ def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, fig=None, ax=None):
         width of bars; values greater than 1 may cause poor appearance
     alpha : `float`, optional
         transparency of the bars
+    label : `str`
+        label for the set of bars
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -458,7 +460,7 @@ def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, fig=None, ax=None):
 
     fig, ax = share_fig_ax(fig, ax)
     ax.plot(base_x, base_y, lw=0.5, c='k')
-    ax.bar(nums, zerndict.values(), width=barwidth, alpha=alpha, zorder=4)
+    ax.bar(nums, zerndict.values(), width=barwidth, alpha=alpha, zorder=4, label=label)
     ax.set(xticks=nums, xticklabels=zerndict.keys(), ylabel=r'Amplitude RMS [$\lambda$]')
     # ax.set_xticks(nums)
     # ax.set_xticklabels(zerndict.keys())
