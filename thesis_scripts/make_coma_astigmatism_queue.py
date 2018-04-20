@@ -31,18 +31,23 @@ out[:, 15] = sphcoef / 4
 out[:, 3] = xcoef
 out[:, 4] = xcoef
 
-chunks = np.split(out, 4)
+root = Path(__file__).parent / 'data' / 'astigmatism-vs-angle'
+p = root / 'queue.pkl'
+q = PersistentQueue(p, overwrite=True)
+items = list(out)
+q.put_many(items)
+#chunks = np.split(out, 4)
 
-root = Path(__file__).parent / '..' / '..' / 'data'
-rootc = root / 'coma-vs-angle'
-roota = root / 'astigmatism-vs-angle'
-for idx, chunk in enumerate(chunks):
-    p = rootc / str(idx) / 'queue.pkl'
-    q = PersistentQueue(p, overwrite=True)
-    items = list(chunk)
-    q.put_many(items)
-
-    p = roota / str(idx) / 'queue.pkl'
-    q = PersistentQueue(p, overwrite=True)
-    items = list(chunk)
-    q.put_many(items)
+# root = Path(__file__).parent / '..' / '..' / 'data'
+# rootc = root / 'coma-vs-angle'
+# roota = root / 'astigmatism-vs-angle'
+# for idx, chunk in enumerate(chunks):
+#     p = rootc / str(idx) / 'queue.pkl'
+#     q = PersistentQueue(p, overwrite=True)
+#     items = list(chunk)
+#     q.put_many(items)
+#
+#     p = roota / str(idx) / 'queue.pkl'
+#     q = PersistentQueue(p, overwrite=True)
+#     items = list(chunk)
+#     q.put_many(items)

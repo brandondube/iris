@@ -29,8 +29,8 @@ if __name__ == '__main__':
                    'decoder_ring': W3
                    },
                optopts={
-                   'parallel': False,
-                   'nthreads': 6,
+                   'parallel': True,
+                   'nthreads': 7,
                    'ftol': 1e-7,
                },
                work_time=60 * 17)

@@ -63,6 +63,7 @@ z24 = ymag_high
 alltruth = np.stack((z4, z5, z6, z7, z8, z9, z12, z13, z14, z15, z16, z21, z22, z23, z24, z25), axis=1)
 truths = list(alltruth)
 
-p = Path(__file__).parent / '..' / '..' / 'data' / 'arbitrary-coma-astigmatism'
+p = Path(__file__).parent #/ '..' / '..' /
+p = p / 'data' / 'arbitrary-spherical-coma-astigmatism'
 q = PersistentQueue(p / 'queue.pkl', overwrite=True)
 q.put_many(truths)
