@@ -31,6 +31,7 @@ class Database(object):
         self.path = Path(path).resolve()
         self.data_root = self.path / 'db'
         self.csvpath = self.path / 'index.csv'
+        self.cache = {}
 
         if fields is None:  # initialize the db from the path
             self.df = None
@@ -118,8 +119,11 @@ class Database(object):
             object keyed by this id
 
         """
-        with open(self.data_root / f'{id_}.pkl', 'rb') as fid:
-            doc = pickle.load(fid)
+        try:
+            doc = self.cache[id_]
+        except KeyError:
+            with open(self.data_root / f'{id_}.pkl', 'rb') as fid:
+                doc = pickle.load(fid)
         return doc
 
     def update_document(self, id_, document):
@@ -143,6 +147,11 @@ class Database(object):
         self.df.iloc[idx, :] = insertion_list
         with open(self.data_root / f'{id_}.pkl', 'wb') as fid:
             pickle.dump(document, fid)
+
+        try:
+            del self.cache[id_]
+        except KeyError:
+            pass
 
 
 def merge_databases(dbs, to):
