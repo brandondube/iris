@@ -50,6 +50,11 @@ class Database(object):
             self.df = pd.DataFrame(columns=(*fields, 'id'))
         self.data_root.mkdir(parents=True, exist_ok=True)  # ensure database folders exist
 
+
+    @property
+    def doc_ids(self):
+        return self.df.id.values
+
     def init_csv(self):
         """Initialize the database index to disk."""
         if self.df.empty:
