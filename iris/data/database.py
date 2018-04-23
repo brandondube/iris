@@ -172,7 +172,10 @@ def merge_databases(dbs, to):
     """
     out_root = Path(to)
     out_cproot = out_root / 'db'
-    shutil.rmtree(out_cproot)
+    try:
+        shutil.rmtree(out_cproot)
+    except FileNotFoundError:
+        pass
     out_cproot.mkdir(parents=True, exist_ok=True)
 
     dfs = []
