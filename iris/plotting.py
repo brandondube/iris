@@ -21,7 +21,7 @@ def _plot_attribute_global(nested_iterable, ax):
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
-def plot_costfunction_history_global(document, sqrt=False, fig=None, ax=None):
+def plot_costfunction_history_global(document, sqrt=False, log=True, ylim=(None, None), fig=None, ax=None):
     """Plot the cost function history of a global optimization run.
 
     Parameters
@@ -30,6 +30,10 @@ def plot_costfunction_history_global(document, sqrt=False, fig=None, ax=None):
         document produced by utilities.prepare_document_global
     sqrt : `bool`
         whether to take the sqrt of the cost function
+    log : `bool`
+        whether to plot with logarithmic y axis
+    ylim : iterable of length 2
+        lower, upper y axis limits
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -43,6 +47,10 @@ def plot_costfunction_history_global(document, sqrt=False, fig=None, ax=None):
         Axis containing the plot
 
     """
+    if log is True:
+        yscale = 'log'
+    else:
+        yscale = None
     fig, ax = share_fig_ax(fig, ax)
     if sqrt:
         data = [[_sqrt(x) for x in y] for y in document['cost_iter']]
@@ -51,17 +59,21 @@ def plot_costfunction_history_global(document, sqrt=False, fig=None, ax=None):
         data = document['cost_iter']
         label = 'Cost Function [a.u.]'
     _plot_attribute_global(data, ax=ax)
-    ax.set(ylabel=label)
+    ax.set(ylabel=label, yscale=yscale, ylim=ylim)
     return fig, ax
 
 
-def plot_rrmswfe_history_global(document, fig=None, ax=None):
+def plot_rrmswfe_history_global(document, log=True, ylim=(None, None), fig=None, ax=None):
     """Plot the residual RMS WFE history of a global optimization run.
 
     Parameters
     ----------
     document : `dict`
         document produced by utilities.prepare_document_global
+    log : `bool`
+        whether to plot with logarithmic y axis
+    ylim : iterable of length 2
+        lower, upper y axis limits
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -75,9 +87,13 @@ def plot_rrmswfe_history_global(document, fig=None, ax=None):
         Axis containing the plot
 
     """
+    if log is True:
+        yscale = 'log'
+    else:
+        yscale = None
     fig, ax = share_fig_ax(fig, ax)
     _plot_attribute_global(document['rrmswfe_iter'], ax=ax)
-    ax.set(ylabel=r'Residual RMS WFE [$\lambda$]')
+    ax.set(ylabel=r'Residual RMS WFE [$\lambda$]', yscale=yscale, ylim=ylim)
     return fig, ax
 
 
