@@ -487,30 +487,35 @@ def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, label=None, fig=None, ax=
     return fig, ax
 
 
-def _get_cost_rmswfe_rrmswfe_coma_angle(db, doc_ids):
-    cost, rmswfe, rrmswfe, coma_angle = [], [], [], []
-    for did in doc_ids:
-        doc = db.get_document(did)
-        tp = doc['truth_params']
-        cost.append(doc['cost_final'])
-        rmswfe.append(doc['truth_rmswfe'])
-        rrmswfe.append((doc['rrmswfe_final']))
-        coma_angle.append(np.degrees(atan2(tp[4], tp[3])))
-
-    cost = np.asarray(cost)
-    rmswfe = np.asarray(rmswfe)
-    rrmswfe = np.asarray(rrmswfe)
-    coma_angle = np.asarray(coma_angle)
-
-    return cost, rmswfe, rrmswfe, coma_angle
-
-def _filter_db_for_sph_and_coma_or_ast_mags(db, other='coma', sph_target=0.05, other_target=0.05):
+def _get_idxs(other):
     if other.lower() == 'coma':
         xidx = 3
         yidx = 4
     else:
         xidx = 1
         yidx = 2
+
+    return xidx, yidx
+def _get_cost_rmswfe_rrmswfe_coma_or_ast_angle(db, doc_ids, other='coma'):
+    cost, rmswfe, rrmswfe, angle = [], [], [], []
+    xidx, yidx = _get_idxs(other)
+    for did in doc_ids:
+        doc = db.get_document(did)
+        tp = doc['truth_params']
+        cost.append(doc['cost_final'])
+        rmswfe.append(doc['truth_rmswfe'])
+        rrmswfe.append((doc['rrmswfe_final']))
+        angle.append(np.degrees(atan2(tp[xidx], tp[yidx])))
+
+    cost = np.asarray(cost)
+    rmswfe = np.asarray(rmswfe)
+    rrmswfe = np.asarray(rrmswfe)
+    angle = np.asarray(angle)
+
+    return cost, rmswfe, rrmswfe, angle
+
+def _filter_db_for_sph_and_coma_or_ast_mags(db, other='coma', sph_target=0.05, other_target=0.05):
+    xidx, yidx = _get_idxs(other)
     tolerance = 0.01
     ids = db.doc_ids
     out_ids = []
@@ -537,11 +542,11 @@ def _render_rrmswfe_vs_angle_plot(db, sph_amount, other='coma', fig=None, ax=Non
     fig, ax = share_fig_ax(fig, ax)
     for ca in other_amounts:
         ids = _filter_db_for_sph_and_coma_or_ast_mags(db, other, sph_amount, ca)
-        cost, rmswfe, rrmswfe, coma_angle = _get_cost_rmswfe_rrmswfe_coma_angle(db, ids)
+        cost, rmswfe, rrmswfe, coma_angle = _get_cost_rmswfe_rrmswfe_coma_or_ast_angle(db, ids, other)
         ax.plot(coma_angle, rrmswfe, label=f'{ca}')
 
 
-    ax.set(ylim=(1e-3, 1e-0), yscale='log')
+    ax.set(ylim=(1e-3, 1e-0), yscale='log', ylabel=r'Residual RMS WFE [$\lambda$]', xlabel=r'$\Theta(Z)\,\, [^\circ]$')
     ax.legend(title=lbl + r'$\lambda{}$ RMS')
 
     return fig, ax
