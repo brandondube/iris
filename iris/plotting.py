@@ -10,18 +10,18 @@ from prysm.mathops import sqrt as _sqrt, atan2
 from .core import config_codex_params_to_imgs
 
 
-def _plot_attribute_global(nested_iterable, ax):
+def _plot_attribute_global(nested_iterable, ax, ls=None):
     xmin = 0
     for iteration in nested_iterable:
         len_ = len(iteration)
         x = range(xmin, xmin + len_)
-        ax.plot(x, iteration)
+        ax.plot(x, iteration, ls=ls)
         xmin += len_
 
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
 
-def plot_costfunction_history_global(document, sqrt=False, log=True, ylim=(None, None), fig=None, ax=None):
+def plot_costfunction_history_global(document, sqrt=False, log=True, ylim=(None, None), ls=None, fig=None, ax=None):
     """Plot the cost function history of a global optimization run.
 
     Parameters
@@ -34,6 +34,8 @@ def plot_costfunction_history_global(document, sqrt=False, log=True, ylim=(None,
         whether to plot with logarithmic y axis
     ylim : iterable of length 2
         lower, upper y axis limits
+    ls : `str`
+        line style
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -58,12 +60,12 @@ def plot_costfunction_history_global(document, sqrt=False, log=True, ylim=(None,
     else:
         data = document['cost_iter']
         label = 'Cost Function [a.u.]'
-    _plot_attribute_global(data, ax=ax)
+    _plot_attribute_global(data, ax=ax, ls=ls)
     ax.set(ylabel=label, yscale=yscale, ylim=ylim, xlabel='Iteration')
     return fig, ax
 
 
-def plot_rrmswfe_history_global(document, log=True, ylim=(None, None), fig=None, ax=None):
+def plot_rrmswfe_history_global(document, log=True, ylim=(None, None), ls=None, fig=None, ax=None):
     """Plot the residual RMS WFE history of a global optimization run.
 
     Parameters
@@ -74,6 +76,8 @@ def plot_rrmswfe_history_global(document, log=True, ylim=(None, None), fig=None,
         whether to plot with logarithmic y axis
     ylim : iterable of length 2
         lower, upper y axis limits
+    ls : `str`
+        line style
     fig : `matplotlib.figure.Figure`
         Figure containing the plot
     ax : `matplotlib.axes.Axis`
@@ -92,7 +96,7 @@ def plot_rrmswfe_history_global(document, log=True, ylim=(None, None), fig=None,
     else:
         yscale = None
     fig, ax = share_fig_ax(fig, ax)
-    _plot_attribute_global(document['rrmswfe_iter'], ax=ax)
+    _plot_attribute_global(document['rrmswfe_iter'], ax=ax, ls=ls)
     ax.set(ylabel=r'Residual RMS WFE [$\lambda$]', yscale=yscale, ylim=ylim, xlabel='Iteration')
     return fig, ax
 
@@ -443,7 +447,7 @@ def plot_image_from_cfg_codex_params_focus(config, codex, params, focuses, gamma
     return fig, axs
 
 
-def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, label=None, fig=None, ax=None):
+def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, shift=0, label=None, fig=None, ax=None):
     """Summary
 
     Parameters
@@ -454,6 +458,8 @@ def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, label=None, fig=None, ax=
         width of bars; values greater than 1 may cause poor appearance
     alpha : `float`, optional
         transparency of the bars
+    shift : `float`,
+        amount to shift the x values by, used for combining multiple barplots
     label : `str`
         label for the set of bars
     fig : `matplotlib.figure.Figure`
@@ -469,7 +475,7 @@ def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, label=None, fig=None, ax=
         Axis containing the plot
 
     """
-    nums = [int(x[1:]) for x in zerndict.keys()]
+    nums = [int(x[1:]) + shift for x in zerndict.keys()]
     base_adj = barwidth / 2
     base_y = [0, 0]
     base_x = [min(nums) - base_adj, max(nums) + base_adj]
@@ -478,9 +484,6 @@ def zernike_barplot(zerndict, barwidth=0.8, alpha=1.0, label=None, fig=None, ax=
     ax.plot(base_x, base_y, lw=0.5, c='k')
     ax.bar(nums, zerndict.values(), width=barwidth, alpha=alpha, zorder=4, label=label)
     ax.set(xticks=nums, xticklabels=zerndict.keys(), ylabel=r'Amplitude RMS [$\lambda$]')
-    # ax.set_xticks(nums)
-    # ax.set_xticklabels(zerndict.keys())
-    # ax.minorticks_off()
     for tick in ax.get_xticklabels():
         tick.set_rotation(45)
 
@@ -546,7 +549,7 @@ def _render_rrmswfe_vs_angle_plot(db, sph_amount, other='coma', fig=None, ax=Non
         ax.plot(coma_angle, rrmswfe, label=f'{ca}')
 
 
-    ax.set(ylim=(1e-3, 1e-0), yscale='log', ylabel=r'Residual RMS WFE [$\lambda$]', xlabel=r'$\Theta(Z)\,\, [^\circ]$')
+    ax.set(ylim=(1e-3, 1e-0), yscale='log', ylabel=r'Residual RMS WFE [$\lambda$]', xlabel=r'$\Theta(Z)$ [deg]')
     ax.legend(title=lbl + r'$\lambda{}$ RMS')
 
     return fig, ax
