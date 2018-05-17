@@ -549,7 +549,7 @@ def _render_rrmswfe_vs_angle_plot(db, sph_amount, other='coma', fig=None, ax=Non
         ax.plot(coma_angle, rrmswfe, label=f'{ca}')
 
 
-    ax.set(ylim=(1e-3, 1e-0), yscale='log', ylabel=r'Residual RMS WFE [$\lambda$]', xlabel=r'$\Theta(Z)$ [deg]')
-    ax.legend(title=lbl + r'$\lambda{}$ RMS')
+    ax.set(ylim=(1e-4, 1e-0), yscale='log', ylabel=r'Residual RMS WFE [$\lambda$]', xlabel=r'$\Theta(Z)$ [deg]')
+    ax.legend(title=lbl + r'$\lambda{}$ RMS', loc='lower left', fancybox=True, framealpha=1)
 
     return fig, ax
